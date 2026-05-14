@@ -1959,7 +1959,7 @@
             <div class="stat-card orange">
               <div class="stat-label">ใกล้หมดอายุ</div>
               <div class="stat-value text-orange" id="urgentCount">0</div>
-              <div class="stat-sub">หมดอายุใน 7 วัน</div>
+              <div class="stat-sub">หมดอายุใน 2 เดือน</div>
             </div>
 
             <div class="stat-card red">
@@ -2038,7 +2038,7 @@
 
               <div class="summary-alert warning">
                 <div>
-                  <div class="summary-alert-title">ล็อตใกล้หมดอายุภายใน 7 วัน</div>
+                  <div class="summary-alert-title">ล็อตใกล้หมดอายุภายใน 2 เดือน</div>
                   <div class="summary-alert-sub">ควรเร่งขายหรือหยิบใช้ก่อน</div>
                 </div>
                 <div class="summary-alert-value text-orange" id="alertWarningCount">0</div>
@@ -2383,7 +2383,7 @@
     function getCalculatedStatus(daysLeft) {
       if (daysLeft === null || daysLeft === undefined) return "safe";
       if (daysLeft < 0) return "expired";
-      if (daysLeft <= 7) return "warning";
+      if (daysLeft <= 60) return "warning";
       return "safe";
     }
 
@@ -2976,11 +2976,11 @@
       dashboardCharts.fefoBucket = new Chart(canvas, {
         type: "bar",
         data: {
-          labels: ["หมดอายุแล้ว", "0-7 วัน", "8-30 วัน", "มากกว่า 30 วัน"],
+          labels: ["หมดอายุแล้ว", "0-60 วัน", "มากกว่า 60 วัน"],
           datasets: [{
             label: "จำนวนล็อต",
-            data: [buckets.expired, buckets.next7, buckets.next30, buckets.over30],
-            backgroundColor: ["#ef4444", "#f59e0b", "#fcd34d", "#93c5fd"],
+            data: [buckets.expired, buckets.next60, buckets.over60],
+            backgroundColor: ["#ef4444", "#f59e0b", "#93c5fd"],
             borderRadius: 10,
             maxBarThickness: 44
           }]
@@ -3321,18 +3321,16 @@
           }
 
           if (!Number.isFinite(item.daysLeft)) {
-            acc.over30 += 1;
+            acc.over60 += 1;
           } else if (item.daysLeft < 0) {
             acc.expired += 1;
-          } else if (item.daysLeft <= 7) {
-            acc.next7 += 1;
-          } else if (item.daysLeft <= 30) {
-            acc.next30 += 1;
+          } else if (item.daysLeft <= 60) {
+            acc.next60 += 1;
           } else {
-            acc.over30 += 1;
+            acc.over60 += 1;
           }
           return acc;
-        }, { expired: 0, next7: 0, next30: 0, over30: 0 });
+        }, { expired: 0, next60: 0, over60: 0 });
         const urgentProductGroups = buildUrgentProductGroups(urgentExpireItems);
         const issueRanking = buildIssueRanking(urgentExpireItems, activeDamageItems);
         const expiryTrend = buildExpiryTrend(urgentExpireItems);

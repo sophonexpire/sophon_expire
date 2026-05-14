@@ -30,6 +30,7 @@ import {
   calculateDaysLeft,
   getCalculatedStatus,
   getFinalHandlingStatus,
+  NEAR_EXPIRY_WARNING_DAYS,
   normalizeDamageStatus
 } from "@/lib/dashboard-utils";
 
@@ -88,7 +89,7 @@ const initialState = {
   expiryTrend: { labels: [], expiredData: [], warningData: [] },
   salesTrend: { labels: [], values: [] },
   topSalesProducts: [],
-  fefoBuckets: { expired: 0, next7: 0, next30: 0, over30: 0 }
+  fefoBuckets: { expired: 0, next60: 0, over60: 0 }
 };
 
 function chipForUrgent(item) {
@@ -220,16 +221,15 @@ export default function DashboardClient() {
     });
 
     renderChart("fefo", fefoRef.current, "bar", {
-      labels: ["หมดอายุ", "0-7 วัน", "8-30 วัน", "มากกว่า 30 วัน"],
+      labels: ["หมดอายุ", "0-60 วัน", "มากกว่า 60 วัน"],
       datasets: [
         {
           data: [
             state.fefoBuckets.expired,
-            state.fefoBuckets.next7,
-            state.fefoBuckets.next30,
-            state.fefoBuckets.over30
+            state.fefoBuckets.next60,
+            state.fefoBuckets.over60
           ],
-          backgroundColor: ["#ef4444", "#f59e0b", "#38bdf8", "#22c55e"]
+          backgroundColor: ["#ef4444", "#f59e0b", "#22c55e"]
         }
       ]
     });
@@ -399,13 +399,12 @@ export default function DashboardClient() {
       const safeCount = batches.filter((item) => item.displayStatus === "safe" && item.quantity_num > 0).length;
       const fefoBuckets = batches.reduce((acc, item) => {
         if (item.quantity_num <= 0 || ["returned", "disposed"].includes(item.displayStatus)) return acc;
-        if (!Number.isFinite(item.daysLeft)) acc.over30 += 1;
+        if (!Number.isFinite(item.daysLeft)) acc.over60 += 1;
         else if (item.daysLeft < 0) acc.expired += 1;
-        else if (item.daysLeft <= 7) acc.next7 += 1;
-        else if (item.daysLeft <= 30) acc.next30 += 1;
-        else acc.over30 += 1;
+        else if (item.daysLeft <= NEAR_EXPIRY_WARNING_DAYS) acc.next60 += 1;
+        else acc.over60 += 1;
         return acc;
-      }, { expired: 0, next7: 0, next30: 0, over30: 0 });
+      }, { expired: 0, next60: 0, over60: 0 });
 
       const urgentProductGroups = buildUrgentProductGroups(urgentItems);
       const issueRanking = buildIssueRanking(urgentItems, activeDamageItems);
@@ -609,7 +608,7 @@ export default function DashboardClient() {
               <div className="stats-grid">
                 <StatCard tone="tone-green" label="สต๊อกคงเหลือรวม" value={formatQtyCompact(state.stats.totalStockQty)} help="รวมสินค้าคงเหลือทั้งหมด" valueClassName="text-green" />
                 <StatCard tone="tone-blue" label="ล็อตทั้งหมด" value={state.stats.totalBatches} help="จำนวนล็อตทั้งหมดในระบบ" valueClassName="text-blue" />
-                <StatCard tone="tone-orange" label="ใกล้หมดอายุ" value={state.stats.urgentCount} help="หมดอายุใน 7 วัน" valueClassName="text-orange" />
+                <StatCard tone="tone-orange" label="ใกล้หมดอายุ" value={state.stats.urgentCount} help="หมดอายุใน 2 เดือน" valueClassName="text-orange" />
                 <StatCard tone="tone-red" label="หมดอายุแล้ว" value={state.stats.expiredCount} help="ควรรีบจัดการ" valueClassName="text-red" />
                 <StatCard tone="tone-purple" label="สินค้าชำรุด" value={state.stats.damagedCount} help="ของชำรุดที่ยังค้าง" valueClassName="text-purple" />
               </div>
@@ -632,7 +631,7 @@ export default function DashboardClient() {
                 <div className="card-help">ดูจำนวนรายการที่ควรรีบเช็ก</div>
                 <div className="alerts-list" style={{ marginTop: 16 }}>
                   <div className="alert-card alert-critical"><div><div className="alert-title">ล็อตหมดอายุที่ยังไม่ปิดงาน</div><div className="card-help">ควรตรวจสอบและปิดงานให้ครบ</div></div><div className="alert-value text-red">{state.stats.alertExpiredCount}</div></div>
-                  <div className="alert-card alert-warning"><div><div className="alert-title">ล็อตใกล้หมดอายุภายใน 7 วัน</div><div className="card-help">ควรเร่งขายหรือหยิบใช้ก่อน</div></div><div className="alert-value text-orange">{state.stats.alertWarningCount}</div></div>
+                  <div className="alert-card alert-warning"><div><div className="alert-title">ล็อตใกล้หมดอายุภายใน 2 เดือน</div><div className="card-help">ควรเร่งขายหรือหยิบใช้ก่อน</div></div><div className="alert-value text-orange">{state.stats.alertWarningCount}</div></div>
                   <div className="alert-card alert-info"><div><div className="alert-title">สินค้าหมดสต๊อก / ควรสั่งซื้อ</div><div className="card-help">อ้างอิงจากยอดขายล่าสุด</div></div><div className="alert-value text-blue">{state.stats.alertReorderCount}</div></div>
                 </div>
               </div>
