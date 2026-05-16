@@ -580,6 +580,99 @@
       border-color: #d8dee8 !important;
     }
 
+    .sales-doc-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .sales-doc-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 14px;
+      border: 1px solid #d8dee8;
+      background: #fff;
+    }
+
+    .sales-doc-card.is-processed {
+      border-left: 5px solid #16a34a;
+    }
+
+    .sales-doc-card.is-pending {
+      border-left: 5px solid #f97316;
+    }
+
+    .sales-doc-main {
+      min-width: 0;
+    }
+
+    .sales-doc-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .sales-doc-date {
+      font-size: 15px;
+      font-weight: 900;
+      color: #0f172a;
+    }
+
+    .sales-doc-file {
+      font-size: 14px;
+      font-weight: 800;
+      color: #111827;
+      overflow-wrap: anywhere;
+    }
+
+    .sales-doc-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      margin-top: 9px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .sales-doc-meta span {
+      display: inline-flex;
+      gap: 4px;
+      align-items: baseline;
+    }
+
+    .sales-doc-meta strong {
+      color: #334155;
+      font-weight: 900;
+    }
+
+    .sales-doc-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(96px, 1fr));
+      gap: 8px;
+      align-content: start;
+      width: 260px;
+    }
+
+    .sales-doc-actions button {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: normal;
+    }
+
+    .sales-doc-actions .danger-action {
+      grid-column: 1 / -1;
+    }
+
+    .sales-doc-actions button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
     .lot-card {
       background: #fff !important;
       border-color: #d8dee8 !important;
@@ -769,6 +862,14 @@
       .main-grid {
         grid-template-columns: 1fr !important;
       }
+
+      .sales-doc-card {
+        grid-template-columns: 1fr;
+      }
+
+      .sales-doc-actions {
+        width: 100%;
+      }
     }
 
     @media (max-width: 760px) {
@@ -776,6 +877,10 @@
       .page.user-view .stockout-guide,
       .simple-top-summary {
         grid-template-columns: 1fr !important;
+      }
+
+      .sales-doc-actions {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -1087,6 +1192,33 @@
     </div>
   </div>
 
+  <div id="pendingDeductModalBackdrop" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="pendingDeductModalTitle">รายการค้างตัด</h3>
+        <button class="modal-close" onclick="closePendingDeductModal()">ปิด</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="subtext" id="pendingDeductSummary">-</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>รหัสสินค้า</th>
+                <th>ชื่อสินค้า</th>
+                <th>ต้องการ</th>
+                <th>ตัดแล้ว</th>
+                <th>ค้างตัด</th>
+              </tr>
+            </thead>
+            <tbody id="pendingDeductTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="productStockCheckModalBackdrop" class="modal-backdrop">
     <div class="modal">
       <div class="modal-header">
@@ -1230,6 +1362,10 @@
 
     window.supabaseClient = supabaseClient;
 
+    const PRODUCT_FETCH_PAGE_SIZE = 1000;
+    const BATCH_FETCH_PAGE_SIZE = 1000;
+    const SALES_LINE_FETCH_PAGE_SIZE = 1000;
+
     const state = {
       batches: [],
       products: [],
@@ -1237,14 +1373,17 @@
       salesLines: [],
       salesBatchDeductMap: {},
       salesBatchDeductHistoryMap: {},
+      salesUploadDeductMap: {},
       pdfPreviewLines: [],
       currentUser: null,
       loading: {
         salesUpload: false,
         salesSave: false,
         salesProcess: false,
+        salesUndoId: null,
         manualStockCut: false,
-        stockCheckSave: false
+        stockCheckSave: false,
+        salesDeleteId: null
       }
     };
 
@@ -1276,7 +1415,7 @@
     function getSelectedUploadStatusText() {
       const upload = getUploadById(getSelectedUploadId());
       if (!upload) return "-";
-      return upload.status === "processed" ? "ตัดสต๊อกแล้ว" : "รอดำเนินการ";
+      return getSalesStatusText(getEffectiveSalesStatus(upload));
     }
   function getStatusPriority(status) {
     if (status === "expired") return 0;
@@ -1341,24 +1480,28 @@
       return user;
     }
 
+    function getCurrentRole() {
+      return String(state.currentUser?.role || "").toLowerCase();
+    }
+
     function canViewSalesFiles() {
-      return state.currentUser && ["admin", "manager"].includes(state.currentUser.role);
+      return state.currentUser && ["admin", "manager"].includes(getCurrentRole());
     }
 
     function canAddSalesUpload() {
-      return !!state.currentUser && ["admin", "manager", "user"].includes(state.currentUser.role);
+      return !!state.currentUser && ["admin", "manager", "user"].includes(getCurrentRole());
     }
 
     function canEditSalesUpload() {
-      return state.currentUser && ["admin", "manager"].includes(state.currentUser.role);
+      return state.currentUser && ["admin", "manager"].includes(getCurrentRole());
     }
 
     function canDeleteSalesUpload() {
-      return state.currentUser && state.currentUser.role === "manager";
+      return state.currentUser && ["admin", "manager"].includes(getCurrentRole());
     }
 
     function canProcessSalesUpload() {
-      return state.currentUser && ["admin", "manager"].includes(state.currentUser.role);
+      return state.currentUser && ["admin", "manager"].includes(getCurrentRole());
     }
 
     function canStockCheck() {
@@ -1366,12 +1509,13 @@
     }
 
     function canFinalizeStockOutConfirm() {
-      return state.currentUser && ["admin", "manager"].includes(state.currentUser.role);
+      return state.currentUser && ["admin", "manager"].includes(getCurrentRole());
     }
 
     function getRoleText(role) {
-      if (role === "admin") return "ADMIN";
-      if (role === "manager") return "MANAGER";
+      const normalizedRole = String(role || "").toLowerCase();
+      if (normalizedRole === "admin") return "ADMIN";
+      if (normalizedRole === "manager") return "MANAGER";
       return "USER";
     }
 
@@ -1633,7 +1777,34 @@
       if (status === "processed") {
         return `<span class="status-badge status-processed">ตัดสต๊อกแล้ว</span>`;
       }
+      if (status === "partial") {
+        return `<span class="status-badge status-warning">ตัดได้บางส่วน</span>`;
+      }
       return `<span class="status-badge status-pending">รอดำเนินการ</span>`;
+    }
+
+    function getSalesStatusText(status) {
+      if (status === "processed") return "ตัดสต๊อกแล้ว";
+      if (status === "partial") return "ตัดได้บางส่วน";
+      return "รอดำเนินการ";
+    }
+
+    function hasSalesDeductionStatus(status) {
+      return ["processed", "partial"].includes(String(status || "").toLowerCase());
+    }
+
+    function getUploadDeductedQty(uploadId) {
+      return normalizeNumber(state.salesUploadDeductMap[String(uploadId || "")] || 0);
+    }
+
+    function hasUploadDeduction(upload) {
+      return hasSalesDeductionStatus(upload?.status) || getUploadDeductedQty(upload?.id) > 0;
+    }
+
+    function getEffectiveSalesStatus(upload) {
+      if (!upload) return "pending";
+      if (hasSalesDeductionStatus(upload.status)) return String(upload.status || "").toLowerCase();
+      return getUploadDeductedQty(upload.id) > 0 ? "partial" : "pending";
     }
 
     function getDaysLeftText(daysLeft) {
@@ -1747,14 +1918,28 @@ function formatEditorTimestamp(value) {
     }
 
     function findProductByCodeOrBarcode(value) {
-      const target = String(value || "").trim().toLowerCase();
+      const target = normalizeSalesMatchValue(value);
       if (!target) return null;
 
       return state.products.find(item => {
-        const barcode = String(item.barcode || "").trim().toLowerCase();
-        const productCode = String(item.product_code || "").trim().toLowerCase();
-        return target === barcode || target === productCode;
+        const barcode = normalizeSalesMatchValue(item.barcode);
+        const productCode = normalizeSalesMatchValue(item.product_code);
+        return isSameProductCode(target, barcode) || isSameProductCode(target, productCode);
       }) || null;
+    }
+
+    function stripCodeLeadingZeros(value) {
+      const text = normalizeSalesMatchValue(value);
+      if (!/^\d+$/.test(text)) return text;
+      return text.replace(/^0+/, "") || "0";
+    }
+
+    function isSameProductCode(a, b) {
+      const left = normalizeSalesMatchValue(a);
+      const right = normalizeSalesMatchValue(b);
+      if (!left || !right) return false;
+      if (left === right) return true;
+      return /^\d+$/.test(left) && /^\d+$/.test(right) && stripCodeLeadingZeros(left) === stripCodeLeadingZeros(right);
     }
 
     function clearSearch() {
@@ -1826,13 +2011,27 @@ function formatEditorTimestamp(value) {
     }
 
     async function loadProducts() {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select("id, product_code, barcode, product_name")
-        .order("product_name", { ascending: true });
+      const products = [];
+      let from = 0;
 
-      if (error) throw error;
-      state.products = data || [];
+      while (true) {
+        const to = from + PRODUCT_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await supabaseClient
+          .from("products")
+          .select("id, product_code, barcode, product_name")
+          .order("product_name", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        products.push(...batch);
+
+        if (batch.length < PRODUCT_FETCH_PAGE_SIZE) break;
+        from += PRODUCT_FETCH_PAGE_SIZE;
+      }
+
+      state.products = products;
     }
 
     function getProductOptionLabel(product) {
@@ -1922,44 +2121,57 @@ function formatEditorTimestamp(value) {
     }
 
     async function loadBatches() {
-    const { data, error } = await supabaseClient
-      .from("batches")
-      .select(`
-        id,
-        product_id,
-        batch_no,
-        received_date,
-        expiry_date,
-        quantity_received,
-        quantity_remaining,
-        supplier_id,
-        status,
-        note,
-        handling_status,
-        handling_note,
-        handled_at,
-        handled_by,
-        created_at,
-        updated_at,
-        products:product_id (
-          id,
-          product_code,
-          barcode,
-          product_name,
-          unit
-        ),
-        suppliers:supplier_id (
-          id,
-          name,
-          contact,
-          phone
-        )
-      `)
-      .order("expiry_date", { ascending: true });
+    const batches = [];
+    let from = 0;
 
-    if (error) throw error;
+    while (true) {
+      const to = from + BATCH_FETCH_PAGE_SIZE - 1;
+      const { data, error } = await supabaseClient
+        .from("batches")
+        .select(`
+          id,
+          product_id,
+          batch_no,
+          received_date,
+          expiry_date,
+          quantity_received,
+          quantity_remaining,
+          supplier_id,
+          status,
+          note,
+          handling_status,
+          handling_note,
+          handled_at,
+          handled_by,
+          created_at,
+          updated_at,
+          products:product_id (
+            id,
+            product_code,
+            barcode,
+            product_name,
+            unit
+          ),
+          suppliers:supplier_id (
+            id,
+            name,
+            contact,
+            phone
+          )
+        `)
+        .order("expiry_date", { ascending: true })
+        .range(from, to);
 
-    state.batches = (data || []).filter(item => {
+      if (error) throw error;
+
+      const batch = data || [];
+      batches.push(...batch);
+
+      if (batch.length < BATCH_FETCH_PAGE_SIZE) break;
+      from += BATCH_FETCH_PAGE_SIZE;
+    }
+
+    state.batches = batches.filter(item => {
       const handlingStatus = String(item.handling_status || "").toLowerCase();
       const handlingNote = String(item.handling_note || "");
       const isFinalized = ["returned", "disposed"].includes(handlingStatus);
@@ -2006,14 +2218,61 @@ function formatEditorTimestamp(value) {
         return;
       }
 
-      const { data, error } = await supabaseClient
-        .from("sales_lines")
-        .select("id, sales_upload_id, product_id, product_barcode, product_name, sold_qty, created_at")
-        .eq("sales_upload_id", uploadId)
-        .order("id", { ascending: true });
+      state.salesLines = await fetchSalesLinesForUpload(uploadId);
+    }
 
-      if (error) throw error;
-      state.salesLines = data || [];
+    async function fetchSalesLinesForUpload(uploadId) {
+      const lines = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + SALES_LINE_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await supabaseClient
+          .from("sales_lines")
+          .select("id, sales_upload_id, product_id, product_barcode, product_name, sold_qty, created_at")
+          .eq("sales_upload_id", uploadId)
+          .order("id", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        lines.push(...batch);
+
+        if (batch.length < SALES_LINE_FETCH_PAGE_SIZE) break;
+        from += SALES_LINE_FETCH_PAGE_SIZE;
+      }
+
+      return lines;
+    }
+
+    async function fetchSalesDeductMovementsForUpload(uploadId) {
+      if (!uploadId) {
+        return [];
+      }
+
+      const movements = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + 999;
+        const { data, error } = await supabaseClient
+          .from("stock_movements")
+          .select("batch_id, product_id, qty_in, qty_out, movement_type, reference_id, reference_type")
+          .eq("reference_type", "sales_upload")
+          .eq("reference_id", Number(uploadId))
+          .in("movement_type", ["sales_deduct", "sales_deduct_cancel"])
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        movements.push(...batch);
+        if (batch.length < 1000) break;
+        from += 1000;
+      }
+
+      return movements;
     }
 
     async function loadSalesBatchDeductions(uploadId) {
@@ -2022,17 +2281,10 @@ function formatEditorTimestamp(value) {
         return;
       }
 
-      const { data, error } = await supabaseClient
-        .from("stock_movements")
-        .select("batch_id, qty_in, qty_out, movement_type, reference_id, reference_type")
-        .eq("reference_type", "sales_upload")
-        .eq("reference_id", Number(uploadId))
-        .in("movement_type", ["sales_deduct", "sales_deduct_cancel"]);
-
-      if (error) throw error;
+      const movements = await fetchSalesDeductMovementsForUpload(uploadId);
 
       const map = {};
-      (data || []).forEach(item => {
+      movements.forEach(item => {
         const key = String(item.batch_id || "");
         if (!key) return;
         const delta = normalizeNumber(item.qty_out) - normalizeNumber(item.qty_in);
@@ -2045,16 +2297,29 @@ function formatEditorTimestamp(value) {
     async function loadSalesBatchDeductionHistory() {
       if (!state.salesUploads.length) {
         state.salesBatchDeductHistoryMap = {};
+        state.salesUploadDeductMap = {};
         return;
       }
 
-      const { data, error } = await supabaseClient
-        .from("stock_movements")
-        .select("batch_id, qty_in, qty_out, movement_type, reference_id, reference_type, created_at")
-        .eq("reference_type", "sales_upload")
-        .in("movement_type", ["sales_deduct", "sales_deduct_cancel"]);
+      const movements = [];
+      let from = 0;
 
-      if (error) throw error;
+      while (true) {
+        const to = from + 999;
+        const { data, error } = await supabaseClient
+          .from("stock_movements")
+          .select("batch_id, qty_in, qty_out, movement_type, reference_id, reference_type, created_at")
+          .eq("reference_type", "sales_upload")
+          .in("movement_type", ["sales_deduct", "sales_deduct_cancel"])
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        movements.push(...batch);
+        if (batch.length < 1000) break;
+        from += 1000;
+      }
 
       const uploadMap = {};
       state.salesUploads.forEach(item => {
@@ -2062,7 +2327,7 @@ function formatEditorTimestamp(value) {
       });
 
       const aggregate = {};
-      (data || []).forEach(item => {
+      movements.forEach(item => {
         const batchId = String(item.batch_id || "");
         const uploadId = String(item.reference_id || "");
         if (!batchId || !uploadId) return;
@@ -2081,6 +2346,7 @@ function formatEditorTimestamp(value) {
       });
 
       const historyMap = {};
+      const uploadDeductMap = {};
       Object.values(aggregate)
         .filter(item => item.qty > 0)
         .forEach(item => {
@@ -2096,6 +2362,7 @@ function formatEditorTimestamp(value) {
 
           if (!historyMap[item.batchId]) historyMap[item.batchId] = [];
           historyMap[item.batchId].push(entry);
+          uploadDeductMap[item.uploadId] = Number(((uploadDeductMap[item.uploadId] || 0) + item.qty).toFixed(2));
         });
 
       Object.values(historyMap).forEach(list => {
@@ -2103,6 +2370,7 @@ function formatEditorTimestamp(value) {
       });
 
       state.salesBatchDeductHistoryMap = historyMap;
+      state.salesUploadDeductMap = uploadDeductMap;
     }
 
     function populateSalesUploadSelect() {
@@ -2120,7 +2388,7 @@ function formatEditorTimestamp(value) {
         `<option value="">-- เลือกเอกสาร --</option>` +
         state.salesUploads.map(item => `
           <option value="${item.id}">
-            ${formatDate(item.sales_date)} | ${escapeHtml(item.file_name || "ไม่มีชื่อไฟล์")} | ${escapeHtml(item.status === "processed" ? "ตัดสต๊อกแล้ว" : "รอดำเนินการ")}
+            ${formatDate(item.sales_date)} | ${escapeHtml(item.file_name || "ไม่มีชื่อไฟล์")} | ${escapeHtml(getSalesStatusText(getEffectiveSalesStatus(item)))}
           </option>
         `).join("");
 
@@ -2149,49 +2417,43 @@ function formatEditorTimestamp(value) {
       }
 
       wrap.innerHTML = `
-        <div class="doc-table-wrap">
-          <table class="doc-table">
-            <thead>
-              <tr>
-                <th>วันที่ขาย</th>
-                <th>ไฟล์</th>
-                <th class="name-col">อัปโหลดโดย</th>
-                <th class="name-col">แก้ไขโดย</th>
-                <th class="name-col">ตรวจนับโดย</th>
-                <th class="status-col">สถานะ</th>
-                <th class="action-col">จัดการ</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${state.salesUploads.slice(0, 12).map(item => `
-                <tr>
-                  <td>${escapeHtml(formatDate(item.sales_date))}</td>
-                  <td>
-                    <div class="doc-name">${escapeHtml(item.file_name || "-")}</div>
-                    <div class="doc-sub">
-                      ${item.report_date_start && item.report_date_end
-                        ? escapeHtml(formatReportDateRange(item.report_date_start, item.report_date_end))
-                        : "-"}
-                    </div>
-                  </td>
-                  <td>${escapeHtml(item.created_by_name || "-")}</td>
-                  <td>${escapeHtml(item.updated_by_name || item.created_by_name || "-")}</td>
-                  <td>${escapeHtml(item.checked_by_name || "-")}</td>
-                  <td>${getSalesStatusBadge(item.status || "pending")}</td>
-                  <td>
-                    <div class="action-group">
-                      <button type="button" class="btn-info" onclick="selectSalesUpload(${item.id})">เลือก</button>
-                      <button type="button" class="btn-secondary" onclick="openSalesPdf('${escapeHtml(item.file_url || "")}')">เปิด PDF</button>
-                      ${canEditSalesUpload() ? `<button type="button" class="btn-warning" onclick="startEditSalesUpload(${item.id})">แก้ไข</button>` : ``}
-                      ${canProcessSalesUpload() ? `<button type="button" class="btn-info" onclick="selectSalesUpload(${item.id}); setTimeout(autoReadSelectedSalesPdf, 150);">อ่าน PDF</button>` : ``}
-                      ${canProcessSalesUpload() && item.status === "processed" ? `<button type="button" class="btn-warning" onclick="undoSalesDeduction(${item.id})">ยกเลิกตัดสต๊อก</button>` : ``}
-                      ${canDeleteSalesUpload() ? `<button type="button" class="btn-danger" onclick="deleteSalesUpload(${item.id})">ลบ</button>` : ``}
-                    </div>
-                  </td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
+        <div class="sales-doc-list">
+          ${state.salesUploads.slice(0, 12).map(item => {
+            const isDeleting = String(state.loading.salesDeleteId || "") === String(item.id);
+            const status = getEffectiveSalesStatus(item);
+            const rangeText = item.report_date_start && item.report_date_end
+              ? formatReportDateRange(item.report_date_start, item.report_date_end)
+              : "-";
+            const deductedQty = getUploadDeductedQty(item.id);
+
+            return `
+              <div class="sales-doc-card ${hasSalesDeductionStatus(status) ? "is-processed" : "is-pending"}">
+                <div class="sales-doc-main">
+                  <div class="sales-doc-head">
+                    <div class="sales-doc-date">${escapeHtml(formatDate(item.sales_date))}</div>
+                    ${getSalesStatusBadge(status)}
+                  </div>
+                  <div class="sales-doc-file">${escapeHtml(item.file_name || "-")}</div>
+                  <div class="sales-doc-meta">
+                    <span><strong>ช่วงรายงาน</strong> ${escapeHtml(rangeText)}</span>
+                    <span><strong>อัปโหลด</strong> ${escapeHtml(item.created_by_name || "-")}</span>
+                    <span><strong>แก้ไข</strong> ${escapeHtml(item.updated_by_name || item.created_by_name || "-")}</span>
+                    <span><strong>ตรวจนับ</strong> ${escapeHtml(item.checked_by_name || "-")}</span>
+                    ${deductedQty > 0 ? `<span><strong>ตัดแล้ว</strong> ${escapeHtml(formatQty(deductedQty))}</span>` : ``}
+                  </div>
+                </div>
+                <div class="sales-doc-actions">
+                  <button type="button" class="btn-info" data-sales-action="select" data-upload-id="${Number(item.id)}">เลือก</button>
+                  <button type="button" class="btn-secondary" data-sales-action="open-pdf" data-upload-id="${Number(item.id)}">เปิด PDF</button>
+                  ${canEditSalesUpload() ? `<button type="button" class="btn-warning" data-sales-action="edit" data-upload-id="${Number(item.id)}">แก้ไข</button>` : ``}
+                  ${canProcessSalesUpload() ? `<button type="button" class="btn-info" data-sales-action="read-pdf" data-upload-id="${Number(item.id)}">อ่าน PDF</button>` : ``}
+                  ${canViewSalesFiles() ? `<button type="button" class="btn-secondary" data-sales-action="pending-deduct" data-upload-id="${Number(item.id)}">รายการค้างตัด</button>` : ``}
+                  ${canProcessSalesUpload() && hasUploadDeduction(item) ? `<button type="button" class="btn-warning" onclick="undoSalesDeduction(${Number(item.id)})" ${String(state.loading.salesUndoId || "") === String(item.id) ? "disabled" : ""}>${String(state.loading.salesUndoId || "") === String(item.id) ? "กำลังยกเลิก..." : "ยกเลิกตัดสต๊อก"}</button>` : ``}
+                  ${canDeleteSalesUpload() ? `<button type="button" class="btn-danger danger-action" data-sales-action="delete" data-upload-id="${Number(item.id)}" ${isDeleting ? "disabled" : ""}>${isDeleting ? "กำลังลบ..." : "ลบไฟล์นี้"}</button>` : ``}
+                </div>
+              </div>
+            `;
+          }).join("")}
         </div>
       `;
     }
@@ -2669,10 +2931,18 @@ function formatEditorTimestamp(value) {
           });
         }
 
-        map.get(key).sold_qty += normalizeNumber(row.sold_qty);
+        const merged = map.get(key);
+        merged.sold_qty += normalizeNumber(row.sold_qty);
 
-        if (row.found_in_system === false) {
-          map.get(key).found_in_system = false;
+        if (row.product_id && !merged.product_id) {
+          merged.product_id = Number(row.product_id);
+          merged.product_barcode = row.product_barcode || row.product_code || merged.product_barcode;
+          merged.product_name = row.product_name || merged.product_name;
+          merged.found_in_system = true;
+        }
+
+        if (row.found_in_system === false && !merged.product_id) {
+          merged.found_in_system = false;
         }
       }
 
@@ -2680,6 +2950,44 @@ function formatEditorTimestamp(value) {
         ...item,
         sold_qty: Number(item.sold_qty.toFixed(2))
       }));
+    }
+
+    function resolveSalesLineProduct(line) {
+      const candidates = [
+        line?.product_barcode,
+        line?.product_code,
+        line?.barcode
+      ];
+
+      for (const value of candidates) {
+        const product = findProductByCodeOrBarcode(value);
+        if (product) return product;
+      }
+
+      return null;
+    }
+
+    function hydrateSalesLineProduct(line) {
+      const matchedProduct = resolveSalesLineProduct(line);
+      if (!matchedProduct) {
+        return {
+          ...line,
+          product_id: line.product_id ? Number(line.product_id) : null,
+          found_in_system: line.found_in_system !== false && !!line.product_id
+        };
+      }
+
+      return {
+        ...line,
+        product_barcode: matchedProduct.product_code || matchedProduct.barcode || line.product_barcode || line.product_code || "",
+        product_name: matchedProduct.product_name || line.product_name || "",
+        product_id: Number(matchedProduct.id),
+        found_in_system: true
+      };
+    }
+
+    function hydrateSalesLineProducts(lines) {
+      return (lines || []).map(hydrateSalesLineProduct);
     }
 
     function parseSalesLinesFromText(text) {
@@ -2690,10 +2998,7 @@ function formatEditorTimestamp(value) {
         const parsed = parseSalesPdfReportLine(line);
         if (!parsed) continue;
 
-        const matchedProduct = state.products.find(p =>
-          String(p.product_code || "").trim() === parsed.product_code ||
-          String(p.barcode || "").trim() === parsed.product_code
-        );
+        const matchedProduct = findProductByCodeOrBarcode(parsed.product_code);
 
         parsedRows.push({
           product_code: parsed.product_code,
@@ -2842,7 +3147,7 @@ function formatEditorTimestamp(value) {
         return;
       }
 
-      const cleanedLines = (state.pdfPreviewLines || [])
+      const cleanedLines = hydrateSalesLineProducts(state.pdfPreviewLines || [])
         .map(item => ({
           ...item,
           sold_qty: Number(normalizeNumber(item.sold_qty).toFixed(2))
@@ -2871,6 +3176,7 @@ function formatEditorTimestamp(value) {
         setLoadingButton("pdfPreviewSaveAndProcessBtn", "กำลังบันทึก...", true);
         clearMessage();
 
+        state.pdfPreviewLines = cleanedLines;
         state.salesLines = cleanedLines;
 
         const dbLines = cleanedLines.map(item => ({
@@ -2981,13 +3287,14 @@ function formatEditorTimestamp(value) {
 
         await loadBatches();
         await loadSalesUploads();
+        await loadSalesBatchDeductionHistory();
 
         const upload = getUploadById(uploadId);
         if (!upload) throw new Error("ไม่พบเอกสาร");
-        if (upload.status === "processed") throw new Error("เอกสารนี้ถูกประมวลผลแล้ว");
+        if (hasUploadDeduction(upload)) throw new Error("เอกสารนี้ถูกตัดสต๊อกแล้ว กรุณายกเลิกตัดสต๊อกก่อนทำซ้ำ");
 
         const mergedLines = state.salesLines.length
-          ? state.salesLines.map(item => ({
+          ? hydrateSalesLineProducts(state.salesLines).map(item => ({
               product_id: item.product_id ? Number(item.product_id) : null,
               product_barcode: item.product_barcode,
               product_name: item.product_name,
@@ -3017,8 +3324,27 @@ function formatEditorTimestamp(value) {
         if (insertError) throw insertError;
 
         const { enoughLines, insufficientLines } = splitSalesLinesByStock(mergedLines);
+        const partialLines = insufficientLines
+          .filter(item => normalizeNumber(item.available_qty) > 0)
+          .map(item => ({
+            ...item,
+            requested_qty: normalizeNumber(item.sold_qty),
+            shortage_qty: Number((normalizeNumber(item.sold_qty) - normalizeNumber(item.available_qty)).toFixed(2)),
+            sold_qty: normalizeNumber(item.available_qty),
+            partial_deduct: true
+          }));
+        const skippedLines = insufficientLines.filter(item => normalizeNumber(item.available_qty) <= 0);
+        const deductibleLines = [
+          ...enoughLines.map(item => ({
+            ...item,
+            requested_qty: normalizeNumber(item.sold_qty),
+            shortage_qty: 0,
+            partial_deduct: false
+          })),
+          ...partialLines
+        ];
 
-        if (!enoughLines.length) {
+        if (!deductibleLines.length) {
           const summary = insufficientLines
             .map(item =>
               `${item.product_name || "-"} | รหัส ${item.product_barcode} | ต้องการ ${formatQty(item.sold_qty)} | มี ${formatQty(item.available_qty)}`
@@ -3028,19 +3354,19 @@ function formatEditorTimestamp(value) {
           const ok = confirm(
             "ไม่มีรายการที่สต๊อกพอให้ตัดได้\n\n" +
             summary +
-            "\n\nต้องการปิดเอกสารเป็น “ตัดสต๊อกแล้ว” (แต่ไม่มีรายการที่ตัดได้) หรือไม่?"
+            "\n\nต้องการบันทึกเอกสารเป็น “ตัดได้บางส่วน” เพื่อเก็บผลตรวจนี้ไว้หรือไม่?"
           );
           if (!ok) return;
 
           const noteText =
-            `[${timestampThai()}] ตัดสต๊อกแล้ว (ไม่มีรายการที่ตัดได้)\n` +
+            `[${timestampThai()}] ตรวจยอดแล้ว แต่ไม่มีรายการที่ตัดได้\n` +
             `[รายการที่ไม่พบ/สต๊อกไม่พอ/ข้ามทั้งหมด]\n` +
             summary;
 
           await supabaseClient
             .from("sales_uploads")
             .update({
-              status: "processed",
+              status: "partial",
               processed_at: new Date().toISOString(),
               note: appendNote(upload.note, noteText)
             })
@@ -3048,11 +3374,19 @@ function formatEditorTimestamp(value) {
 
           await refreshAll();
           await onChangeSelectedSalesUpload();
-          showMessage("ตัดสต๊อกแล้ว (ไม่มีรายการที่ตัดได้)", "success");
+          showMessage("บันทึกเป็นตัดได้บางส่วน (ไม่มีสต๊อกให้ตัด)", "info");
           return;
         }
 
-        const preview = enoughLines.map(line => {
+        const codeLabel = "\u0e23\u0e2b\u0e31\u0e2a";
+        const neededLabel = "\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23";
+        const availableLabel = "\u0e21\u0e35";
+        const deductOnlyLabel = "\u0e15\u0e31\u0e14\u0e40\u0e17\u0e48\u0e32\u0e17\u0e35\u0e48\u0e21\u0e35";
+        const shortageLabel = "\u0e02\u0e32\u0e14";
+        const moreLabel = "\u0e41\u0e25\u0e30\u0e2d\u0e35\u0e01";
+        const itemLabel = "\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23";
+
+        const preview = deductibleLines.map(line => {
           const batches = getAvailableBatchesByBarcode(line.product_barcode);
           let remain = normalizeNumber(line.sold_qty);
           const parts = [];
@@ -3066,60 +3400,97 @@ function formatEditorTimestamp(value) {
             }
           }
 
-          return `- ${line.product_name}: ${parts.join(", ")}`;
+          const partialText = line.partial_deduct
+            ? ` (${deductOnlyLabel} ${formatQty(line.sold_qty)} / ${neededLabel} ${formatQty(line.requested_qty)} | ${shortageLabel} ${formatQty(line.shortage_qty)})`
+            : "";
+          return `- ${line.product_name}: ${parts.join(", ")}${partialText}`;
         });
 
-        const alertText = insufficientLines.length
+        const stockOutConfirmTitle =
+          "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e15\u0e31\u0e14\u0e2a\u0e15\u0e4a\u0e2d\u0e01\u0e40\u0e17\u0e48\u0e32\u0e17\u0e35\u0e48\u0e21\u0e35?";
+        const insufficientTitle =
+          "\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e15\u0e48\u0e2d\u0e44\u0e1b\u0e19\u0e35\u0e49\u0e44\u0e21\u0e48\u0e21\u0e35\u0e2a\u0e15\u0e4a\u0e2d\u0e01\u0e43\u0e2b\u0e49\u0e15\u0e31\u0e14:";
+        const alertText = skippedLines.length
           ? (
-              "\n\nเธฃเธฒเธขเธเธฒเธฃเธ•เนเธญเนเธเธเธตเนเธชเธ•เนเธญเธเนเธกเนเธเธญ เธฃเธฐเธเธเธเธฐเธขเธฑเธเนเธกเนเธ•เธฑเธ”:\n" +
-              insufficientLines
+              `\n\n${insufficientTitle}\n` +
+              skippedLines
                 .map(item =>
-                  `${item.product_name} | เธฃเธซเธฑเธช ${item.product_barcode} | เธ•เนเธญเธเธเธฒเธฃ ${formatQty(item.sold_qty)} | เธกเธต ${formatQty(item.available_qty)}`
+                  `${item.product_name} | ${codeLabel} ${item.product_barcode} | ${neededLabel} ${formatQty(item.sold_qty)} | ${availableLabel} ${formatQty(item.available_qty)}`
                 )
                 .join("\n")
             )
           : "";
 
         const confirmed = confirm(
-          "เธขเธทเธเธขเธฑเธเธ•เธฑเธ”เธชเธ•เนเธญเธเน€เธเธเธฒเธฐเธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธชเธ•เนเธญเธเธเธญ?\n\n" +
+          `${stockOutConfirmTitle}\n\n` +
           preview.slice(0, 15).join("\n") +
-          (preview.length > 15 ? `\n... เนเธฅเธฐเธญเธตเธ ${preview.length - 15} เธฃเธฒเธขเธเธฒเธฃ` : "") +
+          (preview.length > 15 ? `\n... ${moreLabel} ${preview.length - 15} ${itemLabel}` : "") +
           alertText
         );
         if (!confirmed) return;
 
         const processResults = [];
-        for (const line of enoughLines) {
+        for (const line of deductibleLines) {
           const result = await deductSingleSalesLineByFEFO(line, upload);
+          result.requested_qty = normalizeNumber(line.requested_qty || line.sold_qty);
+          result.shortage_qty = normalizeNumber(line.shortage_qty || 0);
+          result.partial_deduct = !!line.partial_deduct;
           processResults.push(result);
         }
 
+        const soldLabel = "\u0e02\u0e32\u0e22";
+        const deductedLabel = "\u0e15\u0e31\u0e14";
+        const skippedLabel = "\u0e02\u0e49\u0e32\u0e21";
+        const successPartialTitle = "ตัดสต๊อกได้บางส่วน";
+        const processedTitle =
+          "\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e17\u0e35\u0e48\u0e15\u0e31\u0e14\u0e44\u0e14\u0e49:";
+        const insufficientAfterTitle =
+          "\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e17\u0e35\u0e48\u0e2a\u0e15\u0e4a\u0e2d\u0e01\u0e44\u0e21\u0e48\u0e1e\u0e2d:";
+        const successTitle = "\u0e15\u0e31\u0e14\u0e2a\u0e15\u0e4a\u0e2d\u0e01\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08";
+        const partialTitle = "\u0e23\u0e32\u0e22\u0e01\u0e32\u0e23\u0e17\u0e35\u0e48\u0e15\u0e31\u0e14\u0e44\u0e14\u0e49\u0e1a\u0e32\u0e07\u0e2a\u0e48\u0e27\u0e19:";
+
         const summaryProcessed = processResults
-          .map(r => `${r.product_name} | เธเธฒเธข ${formatQty(r.sold_qty)} | เธ•เธฑเธ” ${r.batches.join(", ")}`)
+          .map(r => {
+            const partialText = r.partial_deduct
+              ? ` | ${neededLabel} ${formatQty(r.requested_qty)} | ${shortageLabel} ${formatQty(r.shortage_qty)}`
+              : "";
+            return `${r.product_name} | ${soldLabel} ${formatQty(r.requested_qty || r.sold_qty)} | ${deductedLabel} ${formatQty(r.deducted_total)}${partialText} | ${r.batches.join(", ")}`;
+          })
           .join("\n");
 
-        const summarySkipped = insufficientLines
+        const summaryPartial = processResults
+          .filter(item => item.partial_deduct)
+          .map(item => `${item.product_name} | ${neededLabel} ${formatQty(item.requested_qty)} | ${deductedLabel} ${formatQty(item.deducted_total)} | ${shortageLabel} ${formatQty(item.shortage_qty)}`)
+          .join("\n");
+
+        const summarySkipped = skippedLines
           .map(item =>
-            `${item.product_name} | เธฃเธซเธฑเธช ${item.product_barcode} | เธ•เนเธญเธเธเธฒเธฃ ${formatQty(item.sold_qty)} | เธกเธต ${formatQty(item.available_qty)} | เธเนเธฒเธก`
+            `${item.product_name} | ${codeLabel} ${item.product_barcode} | ${neededLabel} ${formatQty(item.sold_qty)} | ${availableLabel} ${formatQty(item.available_qty)} | ${skippedLabel}`
           )
           .join("\n");
 
         const uploadNoteParts = [
-          `[${timestampThai()}] เธ•เธฑเธ”เธชเธ•เนเธญเธเนเธฅเนเธง`,
+          `[${timestampThai()}] ${successTitle}`,
           summaryProcessed
         ];
 
+        if (summaryPartial) {
+          uploadNoteParts.push(`[${partialTitle}]`);
+          uploadNoteParts.push(summaryPartial);
+        }
+
         if (summarySkipped) {
-          uploadNoteParts.push(`[เธฃเธฒเธขเธเธฒเธฃเธชเธ•เนเธญเธเนเธกเนเธเธญ]`);
+          uploadNoteParts.push(`[${insufficientAfterTitle}]`);
           uploadNoteParts.push(summarySkipped);
         }
 
         const mergedNote = appendNote(upload.note || "", uploadNoteParts.join("\n"));
 
+        const finalUploadStatus = (partialLines.length || skippedLines.length) ? "partial" : "processed";
         const { error: uploadStatusError } = await supabaseClient
           .from("sales_uploads")
           .update({
-            status: "processed",
+            status: finalUploadStatus,
             processed_at: new Date().toISOString(),
             note: mergedNote
           })
@@ -3130,34 +3501,30 @@ function formatEditorTimestamp(value) {
         await refreshAll();
         await onChangeSelectedSalesUpload();
 
-        if (insufficientLines.length) {
+        if (partialLines.length || skippedLines.length) {
           alert(
-            "เธ•เธฑเธ”เธชเธ•เนเธญเธเธชเธณเน€เธฃเนเธเน€เธเธเธฒเธฐเธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธชเธ•เนเธญเธเธเธญ\n\n" +
-            "เธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธ•เธฑเธ”เนเธ”เน:\n" +
-            processResults.map(r => `${r.product_name}: ${formatQty(r.sold_qty)}`).join("\n") +
-            "\n\nเธฃเธฒเธขเธเธฒเธฃเธ—เธตเนเธชเธ•เนเธญเธเนเธกเนเธเธญ:\n" +
-            insufficientLines
-              .map(item =>
-                `${item.product_name} | เธฃเธซเธฑเธช ${item.product_barcode} | เธ•เนเธญเธเธเธฒเธฃ ${formatQty(item.sold_qty)} | เธกเธต ${formatQty(item.available_qty)}`
-              )
-              .join("\n")
+            `${successPartialTitle}\n\n` +
+            `${processedTitle}\n` +
+            processResults.map(r => `${r.product_name}: ${deductedLabel} ${formatQty(r.deducted_total)}${r.partial_deduct ? ` / ${neededLabel} ${formatQty(r.requested_qty)} (${shortageLabel} ${formatQty(r.shortage_qty)})` : ""}`).join("\n") +
+            (summarySkipped ? `\n\n${insufficientAfterTitle}\n${summarySkipped}` : "")
           );
         } else {
           showMessage(
-            "เธ•เธฑเธ”เธชเธ•เนเธญเธเธชเธณเน€เธฃเนเธ\n" +
+            `${successTitle}\n` +
             processResults.map(r => `${r.product_name}: ${formatQty(r.sold_qty)}`).join("\n"),
             "success"
           );
         }
       } catch (error) {
         console.error(error);
-        showMessage("เธ•เธฑเธ”เธชเธ•เนเธญเธเนเธกเนเธชเธณเน€เธฃเนเธ: " + getErrorText(error), "error");
+        showMessage("ตัดสต๊อกไม่สำเร็จ: " + getErrorText(error), "error");
       } finally {
         state.loading.salesProcess = false;
       }
     }
 
     async function undoSalesDeduction(uploadId) {
+      if (state.loading.salesUndoId) return;
       if (!canProcessSalesUpload()) {
         showMessage("เฉพาะ ADMIN และ MANAGER เท่านั้นที่ยกเลิกการตัดสต๊อกได้", "error");
         return;
@@ -3169,7 +3536,7 @@ function formatEditorTimestamp(value) {
         return;
       }
 
-      if (upload.status !== "processed") {
+      if (!hasUploadDeduction(upload)) {
         showMessage("เอกสารนี้ยังไม่ได้ตัดสต๊อก", "error");
         return;
       }
@@ -3177,6 +3544,8 @@ function formatEditorTimestamp(value) {
       if (!confirm(`ต้องการยกเลิกตัดสต๊อกของไฟล์ ${upload.file_name || "-"} ใช่หรือไม่?`)) return;
 
       try {
+        state.loading.salesUndoId = Number(uploadId);
+        renderSalesUploadsList();
         clearMessage();
 
         const { data: movementRows, error: movementError } = await supabaseClient
@@ -3224,7 +3593,7 @@ function formatEditorTimestamp(value) {
 
         const { data: batchRows, error: batchError } = await supabaseClient
           .from("batches")
-          .select("id, product_id, batch_no, quantity_remaining, note, expiry_date")
+          .select("id, product_id, batch_no, quantity_received, quantity_remaining, note, expiry_date")
           .in("id", restoreEntries.map(item => item.batchId));
 
         if (batchError) throw batchError;
@@ -3233,8 +3602,19 @@ function formatEditorTimestamp(value) {
           const batch = (batchRows || []).find(row => Number(row.id) === Number(entry.batchId));
           if (!batch) continue;
 
-          const newRemaining = Number((normalizeNumber(batch.quantity_remaining) + normalizeNumber(entry.qty)).toFixed(2));
-          const noteLine = `[${timestampThai()}] ยกเลิกตัดสต๊อกจากไฟล์ ${upload.file_name || "-"} | คืนกลับ ${formatQty(entry.qty)}`;
+          const currentRemaining = normalizeNumber(batch.quantity_remaining);
+          const receivedQty = normalizeNumber(batch.quantity_received);
+          const roomToRestore = Math.max(0, Number((receivedQty - currentRemaining).toFixed(2)));
+          const restoreQty = Math.min(normalizeNumber(entry.qty), roomToRestore);
+
+          if (restoreQty <= 0) {
+            continue;
+          }
+
+          const skippedQty = Number((normalizeNumber(entry.qty) - restoreQty).toFixed(2));
+          const newRemaining = Number((currentRemaining + restoreQty).toFixed(2));
+          const skippedText = skippedQty > 0 ? ` | ไม่คืน ${formatQty(skippedQty)} เพราะเกินยอดรับเข้า` : "";
+          const noteLine = `[${timestampThai()}] ยกเลิกตัดสต๊อกจากไฟล์ ${upload.file_name || "-"} | คืนกลับ ${formatQty(restoreQty)}${skippedText}`;
 
           const { error: updateBatchError } = await supabaseClient
             .from("batches")
@@ -3252,12 +3632,12 @@ function formatEditorTimestamp(value) {
             batch_id: batch.id,
             product_id: batch.product_id,
             movement_type: "sales_deduct_cancel",
-            qty_in: entry.qty,
+            qty_in: restoreQty,
             qty_out: 0,
             balance_after: newRemaining,
             reference_type: "sales_upload",
             reference_id: Number(uploadId),
-            note: `ยกเลิกตัดสต๊อกจากไฟล์: ${upload.file_name || "-"}`
+            note: `ยกเลิกตัดสต๊อกจากไฟล์: ${upload.file_name || "-"}${skippedText}`
           });
         }
 
@@ -3279,9 +3659,16 @@ function formatEditorTimestamp(value) {
         showMessage("ยกเลิกตัดสต๊อกเรียบร้อยแล้ว", "success");
       } catch (error) {
         console.error(error);
-        showMessage("ยกเลิกตัดสต๊อกไม่สำเร็จ: " + getErrorText(error), "error");
+        const errorText = "ยกเลิกตัดสต๊อกไม่สำเร็จ: " + getErrorText(error);
+        showMessage(errorText, "error");
+        alert(errorText);
+      } finally {
+        state.loading.salesUndoId = null;
+        renderSalesUploadsList();
       }
     }
+
+    window.undoSalesDeduction = undoSalesDeduction;
 
     async function deductSingleSalesLineByFEFO(line, upload) {
       const targetQty = normalizeNumber(line.sold_qty);
@@ -3290,7 +3677,7 @@ function formatEditorTimestamp(value) {
 
       const batches = getAvailableBatchesByBarcode(line.product_barcode);
       if (!batches.length) {
-        throw new Error(`เนเธกเนเธเธเธฅเนเธญเธ•เธชเธณเธซเธฃเธฑเธเธชเธดเธเธเนเธฒ ${line.product_name}`);
+        throw new Error(`ไม่พบล็อตสำหรับสินค้า ${line.product_name}`);
       }
 
       const totalAvailable = batches.reduce(
@@ -3299,7 +3686,7 @@ function formatEditorTimestamp(value) {
       );
 
       if (totalAvailable < targetQty) {
-        throw new Error(`เธชเธ•เนเธญเธเธชเธดเธเธเนเธฒ ${line.product_name} เนเธกเนเธเธญ | เธ•เนเธญเธเธเธฒเธฃ ${formatQty(targetQty)} | เธกเธต ${formatQty(totalAvailable)}`);
+        throw new Error(`สต๊อกสินค้า ${line.product_name} ไม่พอ | ต้องการ ${formatQty(targetQty)} | มี ${formatQty(totalAvailable)}`);
       }
 
       const deductionLog = [];
@@ -3316,8 +3703,8 @@ function formatEditorTimestamp(value) {
         const newRemaining = Number((currentRemaining - deductQty).toFixed(2));
 
         const salesNote =
-          `[${timestampThai()}] เธ•เธฑเธ”เธเธฒเธ PDF ${upload.file_name || "-"} | ` +
-          `เธเธฒเธข ${formatQty(deductQty)} | เธเนเธญเธ ${formatQty(currentRemaining)} | เธซเธฅเธฑเธ ${formatQty(newRemaining)}`;
+          `[${timestampThai()}] ตัดจาก PDF ${upload.file_name || "-"} | ` +
+          `ขาย ${formatQty(deductQty)} | ก่อน ${formatQty(currentRemaining)} | หลัง ${formatQty(newRemaining)}`;
 
         const newNote = appendNote(batch.note, salesNote);
 
@@ -3342,7 +3729,7 @@ function formatEditorTimestamp(value) {
           balance_after: newRemaining,
           reference_type: "sales_upload",
           reference_id: Number(upload.id),
-          note: `เธ•เธฑเธ”เธเธฒเธ PDF: ${upload.file_name || "-"} | ${line.product_name || "-"}`
+          note: `ตัดจาก PDF: ${upload.file_name || "-"} | ${line.product_name || "-"}`
         });
 
         batch.quantity_remaining = newRemaining;
@@ -3358,7 +3745,7 @@ function formatEditorTimestamp(value) {
       }
 
       if (remainingToDeduct !== 0 || deductedTotal !== targetQty) {
-        throw new Error(`เธขเธญเธ”เธ•เธฑเธ”เธเธญเธ ${line.product_name} เนเธกเนเธ•เธฃเธเธขเธญเธ”เธเธฒเธข | เธเธฒเธข ${formatQty(targetQty)} | เธ•เธฑเธ”เนเธ”เน ${formatQty(deductedTotal)}`);
+        throw new Error(`ยอดตัดของ ${line.product_name} ไม่ตรงยอดขาย | ขาย ${formatQty(targetQty)} | ตัดได้ ${formatQty(deductedTotal)}`);
       }
 
       return {
@@ -3490,14 +3877,27 @@ function formatEditorTimestamp(value) {
         }
       }
 
+      const requestedQty = qty;
+      const actualDeductQty = Number((qty - remain).toFixed(2));
+
       if (remain > 0) {
-        const availableQty = Number((qty - remain).toFixed(2));
-        alert(`สต๊อกไม่พอสำหรับ ${product?.product_name || "-"}\nต้องการ ${formatQty(qty)} | มี ${formatQty(availableQty)}`);
-        return;
+        if (actualDeductQty <= 0) {
+          alert(`ไม่มีสต๊อกให้ตัดสำหรับ ${product?.product_name || "-"}\nต้องการ ${formatQty(requestedQty)} | มี ${formatQty(actualDeductQty)}`);
+          return;
+        }
       }
 
+      const confirmTitle = "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e15\u0e31\u0e14\u0e2a\u0e15\u0e4a\u0e2d\u0e01\u0e40\u0e2d\u0e07?";
+      const productLabel = "\u0e2a\u0e34\u0e19\u0e04\u0e49\u0e32";
+      const qtyLabel = "\u0e08\u0e33\u0e19\u0e27\u0e19";
+      const batchLabel = "\u0e25\u0e47\u0e2d\u0e15\u0e17\u0e35\u0e48\u0e08\u0e30\u0e16\u0e39\u0e01\u0e15\u0e31\u0e14";
+      const requestedLabel = "\u0e15\u0e49\u0e2d\u0e07\u0e01\u0e32\u0e23";
+      const shortageLabel = "\u0e02\u0e32\u0e14";
+      const partialText = remain > 0
+        ? `\n${requestedLabel}: ${formatQty(requestedQty)} | ${qtyLabel}: ${formatQty(actualDeductQty)} | ${shortageLabel}: ${formatQty(remain)}`
+        : "";
       const confirmed = confirm(
-        `ยืนยันตัดสต๊อกเอง?\nสินค้า: ${product?.product_name || "-"}\nจำนวน: ${formatQty(qty)}\nล็อตที่จะถูกตัด:\n${preview.join("\n")}`
+        `${confirmTitle}\n${productLabel}: ${product?.product_name || "-"}\n${qtyLabel}: ${formatQty(actualDeductQty)}${partialText}\n${batchLabel}:\n${preview.join("\n")}`
       );
       if (!confirmed) return;
 
@@ -3508,16 +3908,18 @@ function formatEditorTimestamp(value) {
 
         const result = await deductManualStockByFEFO({
           productId,
-          qty,
+          qty: actualDeductQty,
           cutDate,
           referenceText,
-          noteText
+          noteText: remain > 0
+            ? appendNote(noteText, `ต้องการตัด ${formatQty(requestedQty)} แต่สต๊อกมี ${formatQty(actualDeductQty)} จึงตัดเท่าที่มี ขาด ${formatQty(remain)}`)
+            : noteText
         });
 
         await refreshAll();
         resetManualStockCutForm();
         showMessage(
-          `ตัดสต๊อกเองสำเร็จ: ${result.product_name || "-"} จำนวน ${formatQty(result.deducted_total)} | ${result.batches.join(", ")}`,
+          `ตัดสต๊อกเองสำเร็จ: ${result.product_name || "-"} จำนวน ${formatQty(result.deducted_total)}${remain > 0 ? ` / ต้องการ ${formatQty(requestedQty)} ขาด ${formatQty(remain)}` : ""} | ${result.batches.join(", ")}`,
           "success"
         );
       } catch (error) {
@@ -3540,41 +3942,305 @@ function formatEditorTimestamp(value) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
+    async function restoreSalesDeductionBeforeDelete(upload) {
+      const uploadId = Number(upload?.id || 0);
+      if (!uploadId || !hasUploadDeduction(upload)) return;
+
+      const { data: movementRows, error: movementError } = await supabaseClient
+        .from("stock_movements")
+        .select("id, batch_id, product_id, qty_in, qty_out, movement_type")
+        .eq("reference_type", "sales_upload")
+        .eq("reference_id", uploadId)
+        .in("movement_type", ["sales_deduct", "sales_deduct_cancel"]);
+
+      if (movementError) throw movementError;
+
+      const restoreMap = {};
+      (movementRows || []).forEach(item => {
+        const batchId = Number(item.batch_id || 0);
+        if (!batchId) return;
+        const delta = normalizeNumber(item.qty_out) - normalizeNumber(item.qty_in);
+        restoreMap[batchId] = Number(((restoreMap[batchId] || 0) + delta).toFixed(2));
+      });
+
+      const restoreEntries = Object.entries(restoreMap)
+        .map(([batchId, qty]) => ({ batchId: Number(batchId), qty: Number(qty) }))
+        .filter(item => item.qty > 0);
+
+      if (!restoreEntries.length) return;
+
+      const { data: batchRows, error: batchError } = await supabaseClient
+        .from("batches")
+        .select("id, product_id, batch_no, quantity_received, quantity_remaining, note, expiry_date")
+        .in("id", restoreEntries.map(item => item.batchId));
+
+      if (batchError) throw batchError;
+
+      for (const entry of restoreEntries) {
+        const batch = (batchRows || []).find(row => Number(row.id) === Number(entry.batchId));
+        if (!batch) continue;
+
+        const currentRemaining = normalizeNumber(batch.quantity_remaining);
+        const receivedQty = normalizeNumber(batch.quantity_received);
+        const roomToRestore = Math.max(0, Number((receivedQty - currentRemaining).toFixed(2)));
+        const restoreQty = Math.min(normalizeNumber(entry.qty), roomToRestore);
+
+        if (restoreQty <= 0) {
+          continue;
+        }
+
+        const skippedQty = Number((normalizeNumber(entry.qty) - restoreQty).toFixed(2));
+        const newRemaining = Number((currentRemaining + restoreQty).toFixed(2));
+        const skippedText = skippedQty > 0 ? ` | ไม่คืน ${formatQty(skippedQty)} เพราะเกินยอดรับเข้า` : "";
+        const noteLine = `[${timestampThai()}] ลบไฟล์ขาย ${upload.file_name || "-"} | คืนสต๊อกจากไฟล์ที่ถูกลบ ${formatQty(restoreQty)}${skippedText}`;
+
+        const { error: updateBatchError } = await supabaseClient
+          .from("batches")
+          .update({
+            quantity_remaining: newRemaining,
+            note: appendNote(batch.note, noteLine),
+            status: getStatus(calculateDaysLeft(batch.expiry_date)),
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", batch.id);
+
+        if (updateBatchError) throw updateBatchError;
+
+        await insertStockMovement({
+          batch_id: batch.id,
+          product_id: batch.product_id,
+          movement_type: "sales_deduct_cancel",
+          qty_in: restoreQty,
+          qty_out: 0,
+          balance_after: newRemaining,
+          reference_type: "sales_upload",
+          reference_id: uploadId,
+          note: `คืนสต๊อกก่อนลบไฟล์ขาย: ${upload.file_name || "-"}${skippedText}`
+        });
+      }
+    }
+
     async function deleteSalesUpload(id) {
       if (!canDeleteSalesUpload()) {
-        showMessage("เฉพาะ MANAGER เท่านั้นที่ลบเอกสารได้", "error");
+        showMessage("เฉพาะ ADMIN และ MANAGER เท่านั้นที่ลบเอกสารได้", "error");
         return;
       }
 
+      const uploadId = Number(id);
       const item = getUploadById(id);
-      if (!item) return;
+      if (!item || !uploadId) {
+        showMessage("ไม่พบเอกสารที่ต้องการลบ กรุณารีเฟรชหน้าแล้วลองอีกครั้ง", "error");
+        return;
+      }
 
-      if (!confirm(`ต้องการลบเอกสาร ${item.file_name || "-"} ใช่หรือไม่?`)) return;
+      const processedText = hasUploadDeduction(item)
+        ? "\n\nไฟล์นี้ตัดสต๊อกแล้ว ระบบจะคืนสต๊อกที่ตัดจากไฟล์นี้ก่อนลบ"
+        : "";
+      if (!confirm(`ต้องการลบเอกสาร ${item.file_name || "-"} ใช่หรือไม่?${processedText}`)) return;
 
       try {
-        await supabaseClient.from("sales_lines").delete().eq("sales_upload_id", id);
+        clearMessage();
+        state.loading.salesDeleteId = id;
+        renderSalesUploadsList();
 
-        const { error } = await supabaseClient
-          .from("sales_uploads")
-          .delete()
-          .eq("id", id);
-
-        if (error) throw error;
-
-        if (item.file_path) {
-          await supabaseClient.storage.from(CONFIG.SALES_BUCKET).remove([item.file_path]);
+        let restoreWarning = "";
+        try {
+          await restoreSalesDeductionBeforeDelete(item);
+        } catch (restoreError) {
+          console.warn("sales stock restore before delete failed:", restoreError);
+          restoreWarning = " ไม่สามารถคืนสต๊อกที่เคยตัดจากไฟล์นี้ได้";
         }
 
-        if (String($("selectedSalesUpload").value) === String(id)) {
+        const { error: linesError } = await supabaseClient
+          .from("sales_lines")
+          .delete()
+          .eq("sales_upload_id", uploadId);
+
+        if (linesError) throw linesError;
+
+        const { data: deletedUploads, error } = await supabaseClient
+          .from("sales_uploads")
+          .delete()
+          .eq("id", uploadId)
+          .select("id");
+
+        if (error) throw error;
+        if (!deletedUploads || !deletedUploads.length) {
+          throw new Error("Supabase ไม่ได้ลบแถวนี้ อาจเกิดจาก policy/permission ของตาราง sales_uploads");
+        }
+
+        let storageWarning = "";
+        if (item.file_path) {
+          const { error: storageError } = await supabaseClient.storage
+            .from(CONFIG.SALES_BUCKET)
+            .remove([item.file_path]);
+
+          if (storageError) {
+            console.warn("sales PDF storage delete failed:", storageError);
+            storageWarning = " แต่ลบไฟล์ใน Storage ไม่สำเร็จ กรุณาตรวจ Storage policy หรือสิทธิ์ bucket";
+          }
+        }
+
+        if (String($("selectedSalesUpload").value) === String(uploadId)) {
           $("selectedSalesUpload").value = "";
         }
 
         await refreshAll();
         resetSalesUploadForm();
-        showMessage("ลบเอกสารเรียบร้อยแล้ว", "success");
+        const warningText = restoreWarning + storageWarning;
+        showMessage(
+          "ลบเอกสารออกจากระบบเรียบร้อยแล้ว" + warningText,
+          warningText ? "info" : "success"
+        );
       } catch (error) {
         console.error(error);
-        showMessage("ลบเอกสารไม่สำเร็จ: " + getErrorText(error), "error");
+        const errorText = "ลบเอกสารไม่สำเร็จ: " + getErrorText(error);
+        showMessage(errorText, "error");
+        alert(errorText);
+      } finally {
+        state.loading.salesDeleteId = null;
+        renderSalesUploadsList();
+      }
+    }
+
+    window.deleteSalesUpload = deleteSalesUpload;
+
+    function getPendingDeductKeyFromLine(line) {
+      if (line?.product_id) return `product:${Number(line.product_id)}`;
+      const code = normalizeSalesMatchValue(line?.product_barcode || line?.product_code || line?.barcode);
+      if (code) return `code:${code}`;
+      return `name:${normalizeSalesMatchValue(line?.product_name)}`;
+    }
+
+    function getPendingDeductKeyFromMovement(movement) {
+      if (movement?.product_id) return `product:${Number(movement.product_id)}`;
+      const batch = state.batches.find(item => Number(item.id) === Number(movement?.batch_id));
+      if (batch?.product_id) return `product:${Number(batch.product_id)}`;
+      return "";
+    }
+
+    function openPendingDeductModal(upload, pendingItems) {
+      const totalPending = pendingItems.reduce((sum, item) => sum + normalizeNumber(item.pending_qty), 0);
+      $("pendingDeductModalTitle").textContent = `รายการค้างตัด: ${upload.file_name || "-"}`;
+      $("pendingDeductSummary").textContent =
+        `ทั้งหมด ${pendingItems.length} รายการ | ค้างตัดรวม ${formatQty(totalPending)}`;
+      $("pendingDeductTableBody").innerHTML = pendingItems.map(item => `
+        <tr>
+          <td>${escapeHtml(item.product_barcode || "-")}</td>
+          <td>${escapeHtml(item.product_name || "-")}</td>
+          <td>${escapeHtml(formatQty(item.requested_qty))}</td>
+          <td>${escapeHtml(formatQty(item.deducted_qty))}</td>
+          <td><strong>${escapeHtml(formatQty(item.pending_qty))}</strong></td>
+        </tr>
+      `).join("");
+      $("pendingDeductModalBackdrop").classList.add("show");
+    }
+
+    function closePendingDeductModal() {
+      $("pendingDeductModalBackdrop").classList.remove("show");
+      $("pendingDeductTableBody").innerHTML = "";
+      $("pendingDeductSummary").textContent = "-";
+    }
+
+    window.closePendingDeductModal = closePendingDeductModal;
+
+    async function showPendingDeductItems(uploadId) {
+      if (!canViewSalesFiles()) {
+        showMessage("บัญชีนี้ไม่มีสิทธิ์ดูรายการค้างตัด", "error");
+        return;
+      }
+
+      const upload = getUploadById(uploadId);
+      if (!upload) {
+        showMessage("ไม่พบเอกสารที่เลือก กรุณารีเฟรชหน้าแล้วลองอีกครั้ง", "error");
+        return;
+      }
+
+      try {
+        clearMessage();
+        const [rawLines, movements] = await Promise.all([
+          fetchSalesLinesForUpload(uploadId),
+          fetchSalesDeductMovementsForUpload(uploadId)
+        ]);
+
+        const lineMap = {};
+        hydrateSalesLineProducts(rawLines).forEach(line => {
+          const key = getPendingDeductKeyFromLine(line);
+          if (!key) return;
+          if (!lineMap[key]) {
+            lineMap[key] = {
+              product_name: line.product_name || "-",
+              product_barcode: line.product_barcode || line.product_code || "-",
+              requested_qty: 0
+            };
+          }
+          lineMap[key].requested_qty = Number((lineMap[key].requested_qty + normalizeNumber(line.sold_qty)).toFixed(2));
+        });
+
+        const deductedMap = {};
+        movements.forEach(item => {
+          const key = getPendingDeductKeyFromMovement(item);
+          if (!key) return;
+          const delta = normalizeNumber(item.qty_out) - normalizeNumber(item.qty_in);
+          deductedMap[key] = Number(((deductedMap[key] || 0) + delta).toFixed(2));
+        });
+
+        const pendingItems = Object.entries(lineMap)
+          .map(([key, item]) => {
+            const deductedQty = Math.max(0, normalizeNumber(deductedMap[key] || 0));
+            const pendingQty = Number((normalizeNumber(item.requested_qty) - deductedQty).toFixed(2));
+            return {
+              ...item,
+              deducted_qty: deductedQty,
+              pending_qty: pendingQty
+            };
+          })
+          .filter(item => item.pending_qty > 0.0001)
+          .sort((a, b) => b.pending_qty - a.pending_qty || String(a.product_name).localeCompare(String(b.product_name)));
+
+        if (!pendingItems.length) {
+          alert(`ไม่มีรายการค้างตัดสำหรับไฟล์ ${upload.file_name || "-"}`);
+          return;
+        }
+
+        openPendingDeductModal(upload, pendingItems);
+      } catch (error) {
+        console.error(error);
+        const errorText = "โหลดรายการค้างตัดไม่สำเร็จ: " + getErrorText(error);
+        showMessage(errorText, "error");
+        alert(errorText);
+      }
+    }
+
+    window.showPendingDeductItems = showPendingDeductItems;
+
+    function handleSalesUploadListClick(e) {
+      const button = e.target.closest("[data-sales-action]");
+      if (!button) return;
+
+      const uploadId = Number(button.dataset.uploadId || 0);
+      const action = button.dataset.salesAction;
+      const item = getUploadById(uploadId);
+      if (!uploadId || !item) {
+        showMessage("ไม่พบเอกสารที่เลือก กรุณารีเฟรชหน้าแล้วลองอีกครั้ง", "error");
+        return;
+      }
+
+      if (action === "select") {
+        selectSalesUpload(uploadId);
+      } else if (action === "open-pdf") {
+        openSalesPdf(item.file_url || "");
+      } else if (action === "edit") {
+        startEditSalesUpload(uploadId);
+      } else if (action === "read-pdf") {
+        selectSalesUpload(uploadId);
+        setTimeout(autoReadSelectedSalesPdf, 150);
+      } else if (action === "undo") {
+        undoSalesDeduction(uploadId);
+      } else if (action === "delete") {
+        deleteSalesUpload(uploadId);
+      } else if (action === "pending-deduct") {
+        showPendingDeductItems(uploadId);
       }
     }
 
@@ -3628,7 +4294,7 @@ function formatEditorTimestamp(value) {
         $("salesLineCount").textContent = lineCount;
         $("salesLineQtyTotal").textContent = formatQty(totalQty);
         $("salesDeductQtyTotal").textContent = formatQty(deductedTotal);
-        $("salesUploadStatusLabel").textContent = upload?.status === "processed" ? "ตัดสต๊อกแล้ว" : "รอดำเนินการ";
+        $("salesUploadStatusLabel").textContent = getSalesStatusText(getEffectiveSalesStatus(upload));
         $("detailReportDateRange").textContent = upload
           ? formatReportDateRange(upload.report_date_start, upload.report_date_end)
           : "-";
@@ -4030,10 +4696,10 @@ function formatEditorTimestamp(value) {
         : "";
       const deductHistoryHtml = deductHistory.length
         ? `<div class="lot-history-box">
-            <div class="lot-history-title">ประวัติตัดล็อตนี้</div>
+            <div class="lot-history-title">ประวัติตัดจากทุกไฟล์</div>
             ${deductHistory.map(entry => {
               const isSelected = selectedUploadId && String(entry.uploadId) === String(selectedUploadId);
-              return `<div class="lot-history-line${isSelected ? " is-selected" : ""}">-${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.salesDateText)}</div>`;
+              return `<div class="lot-history-line${isSelected ? " is-selected" : ""}">-${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.salesDateText)} | ${escapeHtml(entry.fileName || "-")}</div>`;
             }).join("")}
           </div>`
         : "";
@@ -4183,11 +4849,11 @@ function openProductStockCheckModal(barcode, productId) {
 
         const historyHtml = deductHistory.length
           ? `<div class="sub-mini-text" style="margin-top:6px; color:#1f2937;">
-              ${deductHistory.slice(0, 5).map(entry => {
+              <div style="font-weight:800; color:#334155; margin-bottom:3px;">ประวัติตัดจากทุกไฟล์</div>
+              ${deductHistory.map(entry => {
                 const isSelected = selectedUploadId && String(entry.uploadId) === String(selectedUploadId);
-                return `<div style="${isSelected ? "font-weight:700; color:#1d4ed8;" : ""}">-${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.salesDateText)}</div>`;
+                return `<div style="${isSelected ? "font-weight:700; color:#1d4ed8;" : ""}">-${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.salesDateText)} | ${escapeHtml(entry.fileName || "-")}</div>`;
               }).join("")}
-              ${deductHistory.length > 5 ? `<div style="color:#6b7280;">... อีก ${deductHistory.length - 5} รายการ</div>` : ""}
             </div>`
           : "";
 
@@ -4677,8 +5343,14 @@ function openProductStockCheckModal(barcode, productId) {
 
       $("manualStockCutProductSearch").addEventListener("input", populateManualStockCutProducts);
 
+      $("salesUploadsList")?.addEventListener("click", handleSalesUploadListClick);
+
       $("productStockCheckModalBackdrop").addEventListener("click", function (e) {
         if (e.target.id === "productStockCheckModalBackdrop") closeProductStockCheckModal();
+      });
+
+      $("pendingDeductModalBackdrop").addEventListener("click", function (e) {
+        if (e.target.id === "pendingDeductModalBackdrop") closePendingDeductModal();
       });
 
       $("pdfPreviewModalBackdrop").addEventListener("click", function (e) {

@@ -443,6 +443,7 @@
     let productScannerRunning = false;
     let allProducts = [];
     let currentUser = null;
+    const PRODUCT_FETCH_PAGE_SIZE = 1000;
 
     const $ = (id) => document.getElementById(id);
 
@@ -643,6 +644,24 @@
       try {
         showMessage("กำลังโหลดข้อมูลสินค้า...", "info");
 
+        allProducts = await fetchAllProducts();
+        updateSummary();
+        renderProducts();
+        clearMessage();
+      } catch (error) {
+        showMessage("โหลดข้อมูลสินค้าไม่สำเร็จ: " + error.message, "error");
+        $("productTableBody").innerHTML = `
+          <tr><td colspan="5" class="empty-state">โหลดข้อมูลสินค้าไม่สำเร็จ</td></tr>
+        `;
+      }
+    }
+
+    async function fetchAllProducts() {
+      const products = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + PRODUCT_FETCH_PAGE_SIZE - 1;
         const { data, error } = await supabaseClient
           .from("products")
           .select(`
@@ -661,20 +680,22 @@
               name
             )
           `)
-          .order("product_name", { ascending: true });
+          .order("product_name", { ascending: true })
+          .range(from, to);
 
         if (error) throw error;
 
-        allProducts = data || [];
-        updateSummary();
-        renderProducts();
-        clearMessage();
-      } catch (error) {
-        showMessage("โหลดข้อมูลสินค้าไม่สำเร็จ: " + error.message, "error");
-        $("productTableBody").innerHTML = `
-          <tr><td colspan="5" class="empty-state">โหลดข้อมูลสินค้าไม่สำเร็จ</td></tr>
-        `;
+        const batch = data || [];
+        products.push(...batch);
+
+        if (batch.length < PRODUCT_FETCH_PAGE_SIZE) {
+          break;
+        }
+
+        from += PRODUCT_FETCH_PAGE_SIZE;
       }
+
+      return products;
     }
 
     function updateSummary() {

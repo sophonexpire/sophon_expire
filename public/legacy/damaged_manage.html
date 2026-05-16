@@ -90,14 +90,52 @@
 
     .mode-badge {
       display: inline-block;
-      margin-left: 10px;
-      padding: 5px 10px;
-      border-radius: 999px;
+      padding: 6px 12px;
       font-size: 12px;
-      font-weight: 700;
-      background: #fee2e2;
-      color: #991b1b;
-      vertical-align: middle;
+      font-weight: 900;
+      background: #fff1f2;
+      color: #9f1239;
+      border: 1px solid #fecdd3;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .damage-hero {
+      align-items: center;
+      border-left: 5px solid #ef4444;
+      background:
+        linear-gradient(90deg, rgba(255, 241, 242, 0.95), rgba(255, 255, 255, 0.96) 46%),
+        #fff;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+    }
+
+    .damage-title-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .damage-title-row h1 {
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    .damage-hero .page-header p {
+      max-width: 780px;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .damage-hero .topbar-right {
+      align-items: center;
+    }
+
+    .damage-hero .btn-secondary {
+      min-height: 40px;
+      padding: 9px 18px;
     }
 
     .toolbar {
@@ -209,9 +247,12 @@
     .hint-box,
     .readonly-box,
     .meta-note,
-    .mode-badge,
     .status-pill,
     .id-badge {
+      border-radius: 0;
+    }
+
+    .mode-badge {
       border-radius: 0;
     }
 
@@ -448,6 +489,15 @@
       .form-actions button {
         width: 100%;
       }
+
+      .damage-hero {
+        align-items: flex-start;
+        padding: 18px;
+      }
+
+      .damage-title-row {
+        gap: 8px;
+      }
     }
   </style>
 </head>
@@ -465,12 +515,12 @@
   </div>
 
   <div class="page">
-    <div class="topbar">
+    <div class="topbar damage-hero">
       <div class="page-header">
-        <h1>
-          แจ้งสินค้าชำรุด
+        <div class="damage-title-row">
+          <h1>แจ้งสินค้าชำรุด</h1>
           <span class="mode-badge">Damage Report</span>
-        </h1>
+        </div>
         <p>ค้นหาและเลือกล็อตได้จาก barcode, รหัสสินค้า, ชื่อสินค้า และ batch no</p>
       </div>
 
@@ -679,6 +729,7 @@
     let damageList = [];
     let productMap = {};
     let supplierMap = {};
+    const FETCH_PAGE_SIZE = 1000;
 
     function $(id) {
       return document.getElementById(id);
@@ -802,35 +853,58 @@
     }
 
     async function loadMasterData() {
-      const productRes = await supabaseClient
-        .from("products")
-        .select("id, product_name, product_code, barcode, unit")
-        .order("id", { ascending: true });
+      const products = [];
+      const suppliers = [];
+      let productFrom = 0;
+      let supplierFrom = 0;
 
-      if (productRes.error) {
-        throw new Error("products: " + productRes.error.message);
+      while (true) {
+        const to = productFrom + FETCH_PAGE_SIZE - 1;
+        const productRes = await supabaseClient
+          .from("products")
+          .select("id, product_name, product_code, barcode, unit")
+          .order("id", { ascending: true })
+          .range(productFrom, to);
+
+        if (productRes.error) {
+          throw new Error("products: " + productRes.error.message);
+        }
+
+        const batch = productRes.data || [];
+        products.push(...batch);
+        if (batch.length < FETCH_PAGE_SIZE) break;
+        productFrom += FETCH_PAGE_SIZE;
       }
 
-      const supplierRes = await supabaseClient
-        .from("suppliers")
-        .select("id, name")
-        .order("id", { ascending: true });
+      while (true) {
+        const to = supplierFrom + FETCH_PAGE_SIZE - 1;
+        const supplierRes = await supabaseClient
+          .from("suppliers")
+          .select("id, name")
+          .order("id", { ascending: true })
+          .range(supplierFrom, to);
 
-      if (supplierRes.error) {
-        throw new Error("suppliers: " + supplierRes.error.message);
+        if (supplierRes.error) {
+          throw new Error("suppliers: " + supplierRes.error.message);
+        }
+
+        const batch = supplierRes.data || [];
+        suppliers.push(...batch);
+        if (batch.length < FETCH_PAGE_SIZE) break;
+        supplierFrom += FETCH_PAGE_SIZE;
       }
 
-      console.log("products raw =", productRes.data);
-      console.log("suppliers raw =", supplierRes.data);
+      console.log("products raw =", products);
+      console.log("suppliers raw =", suppliers);
 
       productMap = {};
       supplierMap = {};
 
-      (productRes.data || []).forEach(item => {
+      products.forEach(item => {
         productMap[item.id] = item;
       });
 
-      (supplierRes.data || []).forEach(item => {
+      suppliers.forEach(item => {
         supplierMap[item.id] = item;
       });
 
@@ -890,37 +964,61 @@
       const select = $("batchSelect");
       select.innerHTML = `<option value="">กำลังโหลดล็อต...</option>`;
 
-      const { data, error } = await supabaseClient
-        .from("batches")
-        .select(`
-          id,
-          product_id,
-          batch_no,
-          expiry_date,
-          quantity_remaining,
-          supplier_id,
-          damage_qty
-        `)
-        .order("id", { ascending: false });
+      const batches = [];
+      let from = 0;
 
-      if (error) {
-        console.error("loadBatchOptions error =", error);
-        batchList = [];
-        select.innerHTML = `<option value="">-- โหลดล็อตไม่สำเร็จ --</option>`;
-        throw new Error("batches: " + error.message);
+      while (true) {
+        const to = from + FETCH_PAGE_SIZE - 1;
+        const { data, error } = await supabaseClient
+          .from("batches")
+          .select(`
+            id,
+            product_id,
+            batch_no,
+            expiry_date,
+            quantity_remaining,
+            supplier_id,
+            damage_qty,
+            products:product_id (
+              id,
+              product_name,
+              product_code,
+              barcode,
+              unit
+            ),
+            suppliers:supplier_id (
+              id,
+              name
+            )
+          `)
+          .order("id", { ascending: false })
+          .range(from, to);
+
+        if (error) {
+          console.error("loadBatchOptions error =", error);
+          batchList = [];
+          select.innerHTML = `<option value="">-- โหลดล็อตไม่สำเร็จ --</option>`;
+          throw new Error("batches: " + error.message);
+        }
+
+        const batch = data || [];
+        batches.push(...batch);
+        if (batch.length < FETCH_PAGE_SIZE) break;
+        from += FETCH_PAGE_SIZE;
       }
 
-      console.log("batches raw =", data);
+      console.log("batches raw =", batches);
 
-      batchList = (data || []).map(batch => {
-        const product = productMap[batch.product_id] || null;
-        const supplier = supplierMap[batch.supplier_id] || null;
+      batchList = batches.map(batch => {
+        const product = batch.products || productMap[batch.product_id] || null;
+        const supplier = batch.suppliers || supplierMap[batch.supplier_id] || null;
+        const fallbackCode = batch.product_id ? `product_id ${batch.product_id}` : "";
 
         return {
           ...batch,
-          product_name: product?.product_name || "ไม่พบสินค้า",
+          product_name: product?.product_name || `สินค้า product_id ${batch.product_id || "-"}`,
           product_unit: product?.unit || "-",
-          product_code: product?.product_code || "",
+          product_code: product?.product_code || fallbackCode,
           barcode: product?.barcode || "",
           supplier_name: supplier?.name || "-"
         };

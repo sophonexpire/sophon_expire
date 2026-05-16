@@ -734,6 +734,9 @@
       CONFIG.SUPABASE_ANON_KEY
     );
 
+    const PRODUCT_FETCH_PAGE_SIZE = 1000;
+    const BATCH_FETCH_PAGE_SIZE = 1000;
+
     const state = {
       productScanner: null,
       productScannerRunning: false,
@@ -1089,19 +1092,63 @@
       renderBatches();
     }
 
+    function normalizeProductLookupValue(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9\u0E00-\u0E7F]/g, "");
+    }
+
+    function stripLookupLeadingZeros(value) {
+      const text = normalizeProductLookupValue(value);
+      if (!/^\d+$/.test(text)) return text;
+      return text.replace(/^0+/, "") || "0";
+    }
+
+    function isSameProductLookupValue(a, b) {
+      const left = normalizeProductLookupValue(a);
+      const right = normalizeProductLookupValue(b);
+      if (!left || !right) return false;
+      if (left === right) return true;
+      return /^\d+$/.test(left) && /^\d+$/.test(right) && stripLookupLeadingZeros(left) === stripLookupLeadingZeros(right);
+    }
+
+    function getProductDisplayCode(product) {
+      return product?.product_code || product?.barcode || "";
+    }
+
     function findProductByBarcode(barcode) {
-      const target = String(barcode || "").trim().toLowerCase();
-      return state.products.find(item => String(item.barcode || "").trim().toLowerCase() === target);
+      const target = normalizeProductLookupValue(barcode);
+      if (!target) return null;
+
+      return state.products.find(item =>
+        isSameProductLookupValue(target, item.product_code) ||
+        isSameProductLookupValue(target, item.barcode)
+      ) || null;
     }
 
     async function loadProducts() {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select("id, barcode, product_name")
-        .order("product_name", { ascending: true });
+      const products = [];
+      let from = 0;
 
-      if (error) throw error;
-      state.products = data || [];
+      while (true) {
+        const to = from + PRODUCT_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await supabaseClient
+          .from("products")
+          .select("id, product_code, barcode, product_name")
+          .order("product_name", { ascending: true })
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        products.push(...batch);
+
+        if (batch.length < PRODUCT_FETCH_PAGE_SIZE) break;
+        from += PRODUCT_FETCH_PAGE_SIZE;
+      }
+
+      state.products = products;
     }
 
     async function loadSuppliers() {
@@ -1115,41 +1162,55 @@
     }
 
     async function loadBatches() {
-      const { data, error } = await supabaseClient
-        .from("batches")
-        .select(`
-          id,
-          product_id,
-          batch_no,
-          received_date,
-          expiry_date,
-          quantity_received,
-          quantity_remaining,
-          supplier_id,
-          status,
-          note,
-          created_at,
-          updated_at,
-          created_by_name,
-          updated_by_name,
-          products:product_id (
-            id,
-            barcode,
-            product_name,
-            unit
-          ),
-          suppliers:supplier_id (
-            id,
-            name,
-            contact,
-            phone
-          )
-        `)
-        .order("created_at", { ascending: false });
+      const batches = [];
+      let from = 0;
 
-      if (error) throw error;
+      while (true) {
+        const to = from + BATCH_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await supabaseClient
+          .from("batches")
+          .select(`
+            id,
+            product_id,
+            batch_no,
+            received_date,
+            expiry_date,
+            quantity_received,
+            quantity_remaining,
+            supplier_id,
+            status,
+            note,
+            created_at,
+            updated_at,
+            created_by_name,
+            updated_by_name,
+            products:product_id (
+              id,
+              product_code,
+              barcode,
+              product_name,
+              unit
+            ),
+            suppliers:supplier_id (
+              id,
+              name,
+              contact,
+              phone
+            )
+          `)
+          .order("created_at", { ascending: false })
+          .range(from, to);
 
-      state.batches = (data || []).map(item => ({
+        if (error) throw error;
+
+        const batch = data || [];
+        batches.push(...batch);
+
+        if (batch.length < BATCH_FETCH_PAGE_SIZE) break;
+        from += BATCH_FETCH_PAGE_SIZE;
+      }
+
+      state.batches = batches.map(item => ({
         ...item,
         status: getStatus(calculateDaysLeft(item.expiry_date))
       }));
@@ -1176,6 +1237,7 @@
       const product = findProductByBarcode(barcode);
       if (product) {
         $("productId").value = product.id || "";
+        $("productBarcode").value = getProductDisplayCode(product) || barcode;
         $("productName").value = product.product_name || "";
       } else {
         clearProductFields();
@@ -1299,7 +1361,7 @@
           ...item,
           days_left: daysLeft,
           calculated_status: calculatedStatus,
-          product_barcode: item.products?.barcode || "",
+          product_barcode: item.products?.product_code || item.products?.barcode || "",
           product_name: item.products?.product_name || "-",
           product_unit: item.products?.unit || "-",
           supplier_name: item.suppliers?.name || "-"
@@ -1542,7 +1604,7 @@
 
       $("editId").value = item.id;
       $("productId").value = item.product_id || "";
-      $("productBarcode").value = item.products?.barcode || "";
+      $("productBarcode").value = item.products?.product_code || item.products?.barcode || "";
       $("productName").value = item.products?.product_name || "";
       $("receivedDate").value = item.received_date || todayString();
       $("batchNo").value = item.batch_no || "";
@@ -1612,9 +1674,9 @@
         clearMessage();
 
         const editId = $("editId").value;
-        const productId = $("productId").value.trim();
+        let productId = $("productId").value.trim();
         const productBarcode = $("productBarcode").value.trim();
-        const productName = $("productName").value.trim();
+        let productName = $("productName").value.trim();
         const receivedDate = $("receivedDate").value || todayString();
         let batchNo = $("batchNo").value.trim();
         const expiryDate = $("expiryDate").value;
@@ -1622,6 +1684,17 @@
         const supplierId = $("supplierId").value;
         const note = buildNoteForSave();
         const currentName = getCurrentDisplayName();
+
+        if (productBarcode && (!productId || !productName)) {
+          const product = findProductByBarcode(productBarcode);
+          if (product) {
+            productId = String(product.id || "");
+            productName = product.product_name || "";
+            $("productId").value = productId;
+            $("productBarcode").value = getProductDisplayCode(product) || productBarcode;
+            $("productName").value = productName;
+          }
+        }
 
         if (!productBarcode || !productId || !productName || !expiryDate || quantityReceived === "") {
           alert("กรุณากรอกข้อมูลให้ครบ");
