@@ -1114,7 +1114,7 @@
     }
 
     function getProductDisplayCode(product) {
-      return product?.product_code || product?.barcode || "";
+      return product?.barcode || product?.product_code || "";
     }
 
     function findProductByBarcode(barcode) {
@@ -1374,7 +1374,7 @@
           ...item,
           days_left: daysLeft,
           calculated_status: calculatedStatus,
-          product_barcode: item.products?.product_code || item.products?.barcode || "",
+          product_barcode: item.products?.barcode || item.products?.product_code || "",
           product_name: item.products?.product_name || "-",
           product_unit: item.products?.unit || "-",
           supplier_name: item.suppliers?.name || "-"
@@ -1617,7 +1617,7 @@
 
       $("editId").value = item.id;
       $("productId").value = item.product_id || "";
-      $("productBarcode").value = item.products?.product_code || item.products?.barcode || "";
+      $("productBarcode").value = item.products?.barcode || item.products?.product_code || "";
       $("productName").value = item.products?.product_name || "";
       $("receivedDate").value = item.received_date || todayString();
       $("batchNo").value = item.batch_no || "";

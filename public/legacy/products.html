@@ -319,16 +319,16 @@
           <form id="productForm" class="form-grid">
             <div class="form-group full">
               <label for="productCode">รหัสสินค้า *</label>
-              <div class="barcode-row">
-                <input type="text" id="productCode" placeholder="กรอกรหัสสินค้า เช่น SKU หรือ PLU" required />
-                <button type="button" class="btn-success" id="scanBtn" onclick="startProductScanner()">สแกน</button>
-                <button type="button" class="btn-secondary" id="closeCameraBtn" onclick="stopProductScanner()">ปิดกล้อง</button>
-              </div>
+              <input type="text" id="productCode" placeholder="กรอกรหัสสินค้า เช่น SKU หรือ PLU" required />
             </div>
 
             <div class="form-group full">
               <label for="barcode">บาร์โค้ดสินค้า</label>
-              <input type="text" id="barcode" placeholder="กรอกหรือสแกนบาร์โค้ด ถ้าไม่ใส่ระบบจะใช้รหัสสินค้า" />
+              <div class="barcode-row">
+                <input type="text" id="barcode" placeholder="กรอกหรือสแกนบาร์โค้ด ถ้าไม่ใส่ระบบจะใช้รหัสสินค้า" />
+                <button type="button" class="btn-success" id="scanBtn" onclick="startProductScanner()">สแกนบาร์โค้ด</button>
+                <button type="button" class="btn-secondary" id="closeCameraBtn" onclick="stopProductScanner()">ปิดกล้อง</button>
+              </div>
             </div>
 
             <div class="form-group full">
