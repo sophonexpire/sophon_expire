@@ -1917,6 +1917,14 @@
       line-height: 1;
     }
 
+    .manager-metric-money {
+      margin-top: 8px;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
     .manager-metric-note {
       margin-top: 8px;
       color: #64748b;
@@ -1962,6 +1970,35 @@
       color: #475569;
       font-size: 13px;
       line-height: 1.65;
+    }
+
+    .manager-value-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .manager-value-pill {
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .manager-value-label {
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .manager-value-number {
+      margin-top: 5px;
+      color: #0f172a;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.1;
     }
 
     .priority-panel {
@@ -2028,7 +2065,8 @@
 
     @media (max-width: 1120px) {
       .manager-command,
-      .manager-metrics {
+      .manager-metrics,
+      .manager-value-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -2083,24 +2121,28 @@
             <div class="manager-metric critical">
               <div class="manager-metric-label">งานเปิดทั้งหมด</div>
               <div class="manager-metric-value" id="managerOpenWork">0</div>
+              <div class="manager-metric-money" id="managerOpenValue">฿0.00</div>
               <div class="manager-metric-note">หมดอายุ / ชำรุด / ต้องสั่งซื้อ</div>
             </div>
 
             <div class="manager-metric warning">
               <div class="manager-metric-label">ความเสี่ยงสูง</div>
               <div class="manager-metric-value" id="managerCriticalRisk">0</div>
+              <div class="manager-metric-money" id="managerCriticalValue">฿0.00</div>
               <div class="manager-metric-note">หมดอายุแล้ว + ชำรุดค้าง</div>
             </div>
 
             <div class="manager-metric info">
               <div class="manager-metric-label">ควรเติมสต๊อก</div>
               <div class="manager-metric-value" id="managerReorderPressure">0</div>
+              <div class="manager-metric-money" id="managerReorderValue">฿0.00</div>
               <div class="manager-metric-note">อิงยอดขายและสต๊อกปัจจุบัน</div>
             </div>
 
             <div class="manager-metric good">
               <div class="manager-metric-label">ปิดงานแล้ว</div>
               <div class="manager-metric-value" id="managerClosedWork">0</div>
+              <div class="manager-metric-money" id="managerClosedValue">฿0.00</div>
               <div class="manager-metric-note">คืน supplier / ทำลายแล้ว</div>
             </div>
           </div>
@@ -2114,6 +2156,20 @@
               <div class="progress-fill" id="managerProgressBar"></div>
             </div>
             <div class="manager-decision" id="managerDecisionText">กำลังประเมินสถานการณ์...</div>
+            <div class="manager-value-grid">
+              <div class="manager-value-pill">
+                <div class="manager-value-label">มูลค่าสต๊อกทั้งหมด</div>
+                <div class="manager-value-number" id="managerTotalStockValue">฿0.00</div>
+              </div>
+              <div class="manager-value-pill">
+                <div class="manager-value-label">มูลค่าที่ต้องติดตาม</div>
+                <div class="manager-value-number" id="managerWatchValue">฿0.00</div>
+              </div>
+              <div class="manager-value-pill">
+                <div class="manager-value-label">ความคืบหน้าตามมูลค่า</div>
+                <div class="manager-value-number" id="managerValueProgressText">0%</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2712,6 +2768,27 @@
       return new Intl.NumberFormat("th-TH", { maximumFractionDigits: 2 }).format(num);
     }
 
+    function getMoney(value) {
+      const num = Number(value ?? 0);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function formatMoney(value) {
+      return getMoney(value).toLocaleString("th-TH", {
+        style: "currency",
+        currency: "THB",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function calculateItemValue(quantity, price) {
+      const qty = Number(quantity ?? 0);
+      const unitPrice = Number(price ?? 0);
+      if (!Number.isFinite(qty) || !Number.isFinite(unitPrice)) return 0;
+      return Math.max(qty, 0) * Math.max(unitPrice, 0);
+    }
+
     function parseSalesQty(value) {
       if (value === null || value === undefined || value === "") return 0;
       const num = Number(String(value).replace(/,/g, "").trim());
@@ -2728,6 +2805,7 @@
             productName: item.product_display_name || "ไม่ระบุสินค้า",
             urgentLots: 0,
             urgentQty: 0,
+            urgentValue: 0,
             earliestDaysLeft: Number.POSITIVE_INFINITY
           });
         }
@@ -2735,6 +2813,7 @@
         const current = grouped.get(key);
         current.urgentLots += 1;
         current.urgentQty += Number(item.quantity_num || 0);
+        current.urgentValue += Number(item.stock_value || 0);
         current.earliestDaysLeft = Math.min(
           current.earliestDaysLeft,
           Number.isFinite(item.daysLeft) ? item.daysLeft : Number.POSITIVE_INFINITY
@@ -2837,7 +2916,8 @@
           product_id: Number(item.id),
           product_code: item.product_code || item.barcode || "-",
           product_name: item.product_name || "ไม่ระบุสินค้า",
-          product_unit: item.unit || "-"
+          product_unit: item.unit || "-",
+          price: Number(item.price || 0)
         }
       ]));
 
@@ -2850,7 +2930,8 @@
             product_id: productId,
             product_code: batch.products?.product_code || batch.products?.barcode || "-",
             product_name: batch.product_display_name || batch.products?.product_name || "ไม่ระบุสินค้า",
-            product_unit: batch.products?.unit || "-"
+            product_unit: batch.products?.unit || "-",
+            price: Number(batch.products?.price || 0)
           });
         }
         stockMap.get(productId).currentStock += Number(batch.quantity_num ?? batch.quantity_remaining ?? 0);
@@ -2874,6 +2955,7 @@
             product_code: meta?.product_code || line.product_barcode || "-",
             product_name: meta?.product_name || line.product_name || "ไม่ระบุสินค้า",
             product_unit: meta?.product_unit || "-",
+            price: Number(meta?.price || 0),
             total30: 0,
             total14: 0,
             dates30: new Set()
@@ -2903,6 +2985,7 @@
           product_code: stockMeta?.product_code || row.product_code || "-",
           product_name: stockMeta?.product_name || row.product_name || "ไม่ระบุสินค้า",
           product_unit: stockMeta?.product_unit || row.product_unit || "-",
+          price: Number(stockMeta?.price ?? row.price ?? 0),
           currentStock,
           recentSalesAmount: row.total14,
           avgDailySales,
@@ -2931,7 +3014,13 @@
             badgeText = "ควรสั่งซื้อ";
           }
 
-          return { ...item, recommendedQty, badgeClass, badgeText };
+          return {
+            ...item,
+            recommendedQty,
+            reorderValue: calculateItemValue(recommendedQty, item.price),
+            badgeClass,
+            badgeText
+          };
         })
         .sort((a, b) => {
           const order = { critical: 0, warning: 1, estimated: 2, watch: 3 };
@@ -3023,6 +3112,7 @@
             <div>
               <div class="rank-title">${escapeHtml(item.productName)}</div>
               <div class="rank-sub">เร่งด่วน ${escapeHtml(String(item.urgentLots))} ล็อต • ${escapeHtml(urgencyText)}</div>
+              <div class="rank-sub">มูลค่าเสี่ยง ${escapeHtml(formatMoney(item.urgentValue))}</div>
             </div>
             <div class="rank-value">
               ${escapeHtml(formatQty(item.urgentQty))}
@@ -3353,6 +3443,7 @@
           <div class="mini-item-meta">
             <span class="chip">วันหมดอายุ: ${escapeHtml(formatDate(item.expiry_date))}</span>
             <span class="chip">คงเหลือ: ${escapeHtml(formatQty(item.quantity_num))}</span>
+            <span class="chip">มูลค่า: ${escapeHtml(formatMoney(item.stock_value))}</span>
           </div>
         </div>
       `).join("");
@@ -3378,6 +3469,7 @@
 
           <div class="mini-item-meta">
             <span class="chip damage">จำนวนชำรุด: ${escapeHtml(formatQty(item.quantity_num))}</span>
+            <span class="chip damage">มูลค่า: ${escapeHtml(formatMoney(item.damage_value))}</span>
             <span class="chip">วันที่แจ้ง: ${escapeHtml(formatDate(item.reported_at))}</span>
           </div>
 
@@ -3419,6 +3511,7 @@
           <td>
             <span class="metric-strong">${escapeHtml(formatQtyCompact(item.recommendedQty))}</span>
             <span class="metric-sub">ครอบคลุม ${escapeHtml(String(dashboardState.coverageDays))} วัน</span>
+            <span class="metric-sub">มูลค่า ${escapeHtml(formatMoney(item.reorderValue))}</span>
           </td>
           <td>
             <span class="decision-badge ${escapeHtml(item.badgeClass)}">${escapeHtml(item.badgeText)}</span>
@@ -3435,27 +3528,27 @@
       const priorities = [
         ...expiredItems.slice(0, 3).map(item => ({
           title: item.product_display_name,
-          detail: `หมดอายุแล้ว ${Math.abs(item.daysLeft || 0)} วัน • ${formatQty(item.quantity_num)} ${item.products?.unit || ""}`,
+          detail: `หมดอายุแล้ว ${Math.abs(item.daysLeft || 0)} วัน • ${formatQty(item.quantity_num)} ${item.products?.unit || ""} • ${formatMoney(item.stock_value)}`,
           action: "ปิดงาน",
-          weight: 100 + Math.abs(item.daysLeft || 0)
+          weight: 100 + Math.abs(item.daysLeft || 0) + (Number(item.stock_value || 0) / 1000)
         })),
         ...damageItems.slice(0, 3).map(item => ({
           title: item.product_display_name,
-          detail: `ชำรุด ${formatQty(item.quantity_num)} • ${item.damage_reason || item.note || "รอตรวจสอบ"}`,
+          detail: `ชำรุด ${formatQty(item.quantity_num)} • ${formatMoney(item.damage_value)} • ${item.damage_reason || item.note || "รอตรวจสอบ"}`,
           action: "ติดตาม",
-          weight: 80
+          weight: 80 + (Number(item.damage_value || 0) / 1000)
         })),
         ...warningItems.slice(0, 3).map(item => ({
           title: item.product_display_name,
-          detail: `ใกล้หมดอายุ เหลือ ${item.daysLeft ?? 0} วัน • ${formatQty(item.quantity_num)} ${item.products?.unit || ""}`,
+          detail: `ใกล้หมดอายุ เหลือ ${item.daysLeft ?? 0} วัน • ${formatQty(item.quantity_num)} ${item.products?.unit || ""} • ${formatMoney(item.stock_value)}`,
           action: "เร่งขาย",
-          weight: 60 - Number(item.daysLeft || 0)
+          weight: 60 - Number(item.daysLeft || 0) + (Number(item.stock_value || 0) / 1000)
         })),
         ...reorderRows.slice(0, 3).map(item => ({
           title: item.product_name,
-          detail: `คงเหลือ ${formatQty(item.currentStock)} • แนะนำสั่ง ${formatQty(item.recommendedQty)}`,
+          detail: `คงเหลือ ${formatQty(item.currentStock)} • แนะนำสั่ง ${formatQty(item.recommendedQty)} • ${formatMoney(item.reorderValue)}`,
           action: "เติมสต๊อก",
-          weight: 45 + Number(item.recommendedQty || 0)
+          weight: 45 + Number(item.recommendedQty || 0) + (Number(item.reorderValue || 0) / 1000)
         }))
       ].sort((a, b) => b.weight - a.weight).slice(0, 5);
 
@@ -3476,11 +3569,28 @@
       `).join("");
     }
 
-    function updateManagerCommandCenter({ expiredItems, warningItems, damageItems, handledCount, reorderRows }) {
+    function updateManagerCommandCenter({
+      expiredItems,
+      warningItems,
+      damageItems,
+      handledCount,
+      handledValue,
+      totalStockValue,
+      reorderRows
+    }) {
       const openWork = expiredItems.length + warningItems.length + damageItems.length + reorderRows.length;
       const criticalRisk = expiredItems.length + damageItems.length;
       const totalWork = openWork + handledCount;
       const progress = totalWork > 0 ? Math.round((handledCount / totalWork) * 100) : 100;
+      const expiredValue = expiredItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
+      const warningValue = warningItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
+      const damageValue = damageItems.reduce((sum, item) => sum + Number(item.damage_value || 0), 0);
+      const reorderValue = reorderRows.reduce((sum, item) => sum + Number(item.reorderValue || 0), 0);
+      const openValue = expiredValue + warningValue + damageValue + reorderValue;
+      const criticalValue = expiredValue + damageValue;
+      const trackedValue = openValue + handledValue;
+      const valueProgress = trackedValue > 0 ? Math.round((handledValue / trackedValue) * 100) : 100;
+      const watchValue = expiredValue + warningValue + damageValue;
 
       document.getElementById("managerOpenWork").textContent = openWork;
       document.getElementById("managerCriticalRisk").textContent = criticalRisk;
@@ -3488,16 +3598,23 @@
       document.getElementById("managerClosedWork").textContent = handledCount;
       document.getElementById("managerProgressText").textContent = `${progress}%`;
       document.getElementById("managerProgressBar").style.width = `${progress}%`;
+      document.getElementById("managerOpenValue").textContent = formatMoney(openValue);
+      document.getElementById("managerCriticalValue").textContent = formatMoney(criticalValue);
+      document.getElementById("managerReorderValue").textContent = formatMoney(reorderValue);
+      document.getElementById("managerClosedValue").textContent = formatMoney(handledValue);
+      document.getElementById("managerTotalStockValue").textContent = formatMoney(totalStockValue);
+      document.getElementById("managerWatchValue").textContent = formatMoney(watchValue);
+      document.getElementById("managerValueProgressText").textContent = `${valueProgress}%`;
       document.getElementById("managerUpdatedAt").textContent =
         `อัปเดต ${new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })}`;
 
       let decisionText = "สถานการณ์ปกติ: ไม่มีงานเสี่ยงสูงค้างมาก";
       if (expiredItems.length > 0) {
-        decisionText = `เริ่มจากล็อตหมดอายุ ${expiredItems.length} รายการก่อน แล้วตรวจประวัติการคืน/ตัดออกหลังปิดงาน`;
+        decisionText = `เริ่มจากล็อตหมดอายุ ${expiredItems.length} รายการ มูลค่า ${formatMoney(expiredValue)} ก่อน แล้วตรวจประวัติการคืน/ตัดออกหลังปิดงาน`;
       } else if (damageItems.length > 0) {
-        decisionText = `ไม่มีล็อตหมดอายุ แต่มีสินค้าชำรุดค้าง ${damageItems.length} รายการ ควรติดตาม supplier หรือปิดสถานะ`;
+        decisionText = `ไม่มีล็อตหมดอายุ แต่มีสินค้าชำรุดค้าง ${damageItems.length} รายการ มูลค่า ${formatMoney(damageValue)} ควรติดตาม supplier หรือปิดสถานะ`;
       } else if (reorderRows.length > 0) {
-        decisionText = `งานเสี่ยงลดลงแล้ว เหลือแผนเติมสต๊อก ${reorderRows.length} รายการที่ควรตรวจต่อ`;
+        decisionText = `งานเสี่ยงลดลงแล้ว เหลือแผนเติมสต๊อก ${reorderRows.length} รายการ มูลค่าแนะนำ ${formatMoney(reorderValue)} ที่ควรตรวจต่อ`;
       }
 
       document.getElementById("managerDecisionText").textContent = decisionText;
@@ -3518,7 +3635,7 @@
         const [productsResult, batchesResult, damagesResult, uploadsResult] = await Promise.all([
           supabaseClient
             .from("products")
-            .select("id, product_code, barcode, product_name, unit")
+            .select("id, product_code, barcode, product_name, unit, price")
             .order("product_name", { ascending: true }),
 
           supabaseClient
@@ -3537,7 +3654,8 @@
                 product_code,
                 barcode,
                 product_name,
-                unit
+                unit,
+                price
               ),
               suppliers:supplier_id (
                 id,
@@ -3590,6 +3708,9 @@
         }
 
         const products = productsResult.data || [];
+        const productPriceMap = new Map(
+          products.map(item => [Number(item.id), Number(item.price || 0)])
+        );
 
         const batches = (batchesResult.data || []).map(item => {
           const daysLeft = calculateDaysLeft(item.expiry_date);
@@ -3603,7 +3724,9 @@
             supplier_display_name: item.suppliers?.name || "-",
             daysLeft,
             displayStatus,
-            quantity_num: Number(item.quantity_remaining ?? 0)
+            quantity_num: Number(item.quantity_remaining ?? 0),
+            unit_price: Number(item.products?.price || 0),
+            stock_value: calculateItemValue(item.quantity_remaining, item.products?.price)
           };
         });
 
@@ -3614,6 +3737,8 @@
             ...item,
             product_display_name: item.product_name || "ไม่ระบุสินค้า",
             quantity_num: Number(item.damage_qty ?? 0),
+            unit_price: productPriceMap.get(Number(item.product_id || 0)) || 0,
+            damage_value: calculateItemValue(item.damage_qty, productPriceMap.get(Number(item.product_id || 0)) || 0),
             normalized_status: normalizedStatus,
             displayStatus: normalizedStatus
           };
@@ -3645,8 +3770,12 @@
         const expiredItems = urgentExpireItems.filter(item => item.displayStatus === "expired");
         const warningItems = urgentExpireItems.filter(item => item.displayStatus === "warning");
         const handledCount = returnedBatchItems.length + returnedDamageItems.length;
+        const handledValue =
+          returnedBatchItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0) +
+          returnedDamageItems.reduce((sum, item) => sum + Number(item.damage_value || 0), 0);
         const urgentTotal = expiredItems.length + warningItems.length;
         const totalStockQty = batches.reduce((sum, item) => sum + Number(item.quantity_num || 0), 0);
+        const totalStockValue = batches.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
         const safeCount = batches.filter(item =>
           item.displayStatus === "safe" &&
           item.quantity_num > 0
@@ -3699,6 +3828,8 @@
           warningItems,
           damageItems: activeDamageItems,
           handledCount,
+          handledValue,
+          totalStockValue,
           reorderRows
         });
 
@@ -3759,7 +3890,13 @@
               badgeText = "ควรสั่งซื้อ";
             }
 
-            return { ...item, recommendedQty, badgeClass, badgeText };
+            return {
+              ...item,
+              recommendedQty,
+              reorderValue: calculateItemValue(recommendedQty, item.price),
+              badgeClass,
+              badgeText
+            };
           });
           renderReorderTable(dashboardState.reorderRows);
         });

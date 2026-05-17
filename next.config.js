@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Ensure the server runtime resolves chunks from `.next/server/chunks/*`.
