@@ -1180,6 +1180,10 @@
             supplier_id,
             status,
             note,
+            handling_status,
+            handling_note,
+            handled_at,
+            handled_by,
             created_at,
             updated_at,
             created_by_name,
@@ -1210,7 +1214,16 @@
         from += BATCH_FETCH_PAGE_SIZE;
       }
 
-      state.batches = batches.map(item => ({
+      state.batches = batches.filter(item => {
+        const handlingStatus = String(item.handling_status || "").trim().toLowerCase();
+        const handlingNote = String(item.handling_note || "");
+        const isFinalized = ["returned", "disposed"].includes(handlingStatus);
+        const isManagedExpired =
+          handlingNote.includes("[EXPIRED_CONFIRMED]") &&
+          ["pending", "contacted", "returned", "disposed"].includes(handlingStatus);
+
+        return !isFinalized && !isManagedExpired;
+      }).map(item => ({
         ...item,
         status: getStatus(calculateDaysLeft(item.expiry_date))
       }));
