@@ -318,18 +318,23 @@
 
           <form id="productForm" class="form-grid">
             <div class="form-group full">
-              <label for="productCode">รหัสสินค้า / บาร์โค้ด *</label>
+              <label for="productCode">รหัสสินค้า *</label>
               <div class="barcode-row">
-                <input type="text" id="productCode" placeholder="กรอกรหัสหรือสแกน" required />
+                <input type="text" id="productCode" placeholder="กรอกรหัสสินค้า เช่น SKU หรือ PLU" required />
                 <button type="button" class="btn-success" id="scanBtn" onclick="startProductScanner()">สแกน</button>
                 <button type="button" class="btn-secondary" id="closeCameraBtn" onclick="stopProductScanner()">ปิดกล้อง</button>
               </div>
             </div>
 
             <div class="form-group full">
+              <label for="barcode">บาร์โค้ดสินค้า</label>
+              <input type="text" id="barcode" placeholder="กรอกหรือสแกนบาร์โค้ด ถ้าไม่ใส่ระบบจะใช้รหัสสินค้า" />
+            </div>
+
+            <div class="form-group full">
               <div id="productScannerArea" class="scanner-panel">
                 <div id="productReader"></div>
-                <div class="scanner-note">เมื่อสแกนสำเร็จ ระบบจะใส่รหัสสินค้าให้อัตโนมัติ</div>
+                <div class="scanner-note">เมื่อสแกนสำเร็จ ระบบจะใส่บาร์โค้ดสินค้าให้อัตโนมัติ</div>
               </div>
             </div>
 
@@ -494,6 +499,7 @@
 
       if (isViewOnly()) {
         $("productCode").disabled = true;
+        $("barcode").disabled = true;
         $("productName").disabled = true;
         $("category").disabled = true;
         $("unit").disabled = true;
@@ -509,6 +515,7 @@
         $("formModeBadge").textContent = "โหมดดูข้อมูล";
       } else {
         $("productCode").disabled = false;
+        $("barcode").disabled = false;
         $("productName").disabled = false;
         $("category").disabled = false;
         $("unit").disabled = false;
@@ -855,6 +862,7 @@
 
       editingProductId = id;
       $("productCode").value = product.product_code || "";
+      $("barcode").value = product.barcode || "";
       $("productName").value = product.product_name || "";
       $("category").value = product.categories?.name || "";
       $("unit").value = product.unit || "";
@@ -921,7 +929,7 @@
           cameras[0].id,
           { fps: 10, qrbox: 220 },
           (decodedText) => {
-            $("productCode").value = decodedText;
+            $("barcode").value = decodedText;
             stopProductScanner();
           },
           () => {}
@@ -962,6 +970,7 @@
         showMessage("กำลังบันทึกข้อมูล...", "info");
 
         const productCode = $("productCode").value.trim();
+        const barcode = $("barcode").value.trim() || productCode;
         const productName = $("productName").value.trim();
         const categoryName = $("category").value.trim();
         const unit = $("unit").value.trim();
@@ -973,20 +982,21 @@
           return;
         }
 
-        let codeQuery = supabaseClient
-          .from("products")
-          .select("id, product_code, barcode")
-          .or(`product_code.ilike.${productCode},barcode.ilike.${productCode}`);
+        const duplicateProduct = allProducts.find(item => {
+          if (editingProductId && Number(item.id) === Number(editingProductId)) return false;
+          const existingCode = String(item.product_code || "").trim().toLowerCase();
+          const existingBarcode = String(item.barcode || "").trim().toLowerCase();
+          const nextCode = productCode.toLowerCase();
+          const nextBarcode = barcode.toLowerCase();
 
-        if (editingProductId) {
-          codeQuery = codeQuery.neq("id", editingProductId);
-        }
+          return existingCode === nextCode ||
+            existingBarcode === nextCode ||
+            existingCode === nextBarcode ||
+            existingBarcode === nextBarcode;
+        });
 
-        const { data: duplicateCodeData, error: duplicateCodeError } = await codeQuery.limit(1);
-        if (duplicateCodeError) throw duplicateCodeError;
-
-        if (duplicateCodeData && duplicateCodeData.length > 0) {
-          showMessage("รหัสสินค้านี้มีอยู่แล้ว", "error");
+        if (duplicateProduct) {
+          showMessage("รหัสสินค้าหรือบาร์โค้ดนี้มีอยู่แล้ว", "error");
           return;
         }
 
@@ -999,7 +1009,7 @@
 
         const payload = {
           product_code: productCode,
-          barcode: productCode,
+          barcode,
           product_name: productName,
           category_id: categoryId,
           unit: unit || null,
@@ -1015,13 +1025,13 @@
             .from("products")
             .update(payload)
             .eq("id", editingProductId)
-            .select("id, product_code, product_name, category_id, unit, price, description")
+            .select("id, product_code, barcode, product_name, category_id, unit, price, description")
             .single();
         } else {
           result = await supabaseClient
             .from("products")
             .insert([payload])
-            .select("id, product_code, product_name, category_id, unit, price, description")
+            .select("id, product_code, barcode, product_name, category_id, unit, price, description")
             .single();
         }
 
