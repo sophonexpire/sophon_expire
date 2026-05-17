@@ -1121,9 +1121,13 @@
       const target = normalizeProductLookupValue(barcode);
       if (!target) return null;
 
-      return state.products.find(item =>
-        isSameProductLookupValue(target, item.product_code) ||
+      const barcodeMatch = state.products.find(item =>
         isSameProductLookupValue(target, item.barcode)
+      );
+      if (barcodeMatch) return barcodeMatch;
+
+      return state.products.find(item =>
+        isSameProductLookupValue(target, item.product_code)
       ) || null;
     }
 
@@ -1374,7 +1378,8 @@
           ...item,
           days_left: daysLeft,
           calculated_status: calculatedStatus,
-          product_barcode: item.products?.barcode || item.products?.product_code || "",
+          product_barcode: item.products?.barcode || "",
+          product_code: item.products?.product_code || "",
           product_name: item.products?.product_name || "-",
           product_unit: item.products?.unit || "-",
           supplier_name: item.suppliers?.name || "-"
@@ -1389,6 +1394,7 @@
         filtered = filtered.filter(item =>
           String(item.product_name || "").toLowerCase().includes(search) ||
           String(item.product_barcode || "").toLowerCase().includes(search) ||
+          String(item.product_code || "").toLowerCase().includes(search) ||
           String(item.batch_no || "").toLowerCase().includes(search) ||
           String(item.supplier_name || "").toLowerCase().includes(search) ||
           String(cleanNoteText(item.note).userNote || item.note || "").toLowerCase().includes(search) ||
