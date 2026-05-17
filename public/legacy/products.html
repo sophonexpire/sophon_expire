@@ -466,7 +466,7 @@
     }
 
     function canEdit() {
-      return currentUser && ["admin", "manager"].includes(currentUser.role);
+      return Boolean(currentUser);
     }
 
     function canDelete() {
@@ -474,7 +474,7 @@
     }
 
     function isViewOnly() {
-      return currentUser && currentUser.role === "user";
+      return false;
     }
 
     function getRoleText(role) {
@@ -540,6 +540,18 @@
       box.className = "message-box";
       box.textContent = "";
       box.style.display = "none";
+    }
+
+    function getSaveErrorMessage(error) {
+      if (error?.code === "42501" || /row-level security/i.test(error?.message || "")) {
+        return "บันทึกข้อมูลไม่สำเร็จ: ฐานข้อมูล Supabase ยังบล็อกการเพิ่ม/แก้ไขสินค้าอยู่ กรุณารันไฟล์ sql/10_fix_products_edit_delete.sql ใน Supabase SQL Editor";
+      }
+
+      if (error?.code === "PGRST116" || /0 rows/i.test(error?.details || "")) {
+        return "บันทึกข้อมูลไม่สำเร็จ: Supabase ไม่อนุญาตให้แก้ไขแถวสินค้า กรุณารันไฟล์ sql/10_fix_products_edit_delete.sql ใน Supabase SQL Editor";
+      }
+
+      return "บันทึกข้อมูลไม่สำเร็จ: " + (error?.message || "ไม่สามารถบันทึกข้อมูลได้");
     }
 
     function setFormMode(isEdit) {
@@ -953,11 +965,15 @@
           result = await supabaseClient
             .from("products")
             .update(payload)
-            .eq("id", editingProductId);
+            .eq("id", editingProductId)
+            .select("id, product_code, product_name, category_id, unit, description")
+            .single();
         } else {
           result = await supabaseClient
             .from("products")
-            .insert([payload]);
+            .insert([payload])
+            .select("id, product_code, product_name, category_id, unit, description")
+            .single();
         }
 
         if (result.error) throw result.error;
@@ -966,7 +982,7 @@
         showMessage("บันทึกข้อมูลเรียบร้อยแล้ว", "success");
         await loadProducts();
       } catch (error) {
-        showMessage("บันทึกข้อมูลไม่สำเร็จ: " + (error.message || "ไม่สามารถบันทึกข้อมูลได้"), "error");
+        showMessage(getSaveErrorMessage(error), "error");
       } finally {
         setLoadingButton("saveBtn", "กำลังบันทึก...", false);
       }
