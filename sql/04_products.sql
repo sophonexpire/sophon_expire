@@ -4,6 +4,7 @@ create table public.products (
   product_name text not null,
   category_id bigint null,
   unit text null,
+  price numeric(12, 2) null,
   shelf_life_days integer null,
   barcode text null,
   description text null,
@@ -12,6 +13,7 @@ create table public.products (
   constraint products_pkey primary key (id),
   constraint products_barcode_key unique (barcode),
   constraint products_product_code_key unique (product_code),
+  constraint products_price_nonnegative check (price is null or price >= 0),
   constraint products_category_id_fkey foreign KEY (category_id) references categories (id) on delete set null
 ) TABLESPACE pg_default;
 

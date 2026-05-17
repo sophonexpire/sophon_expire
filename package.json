@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node tests/product-price.test.js",
     "lint": "next lint"
   },
   "dependencies": {

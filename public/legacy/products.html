@@ -350,6 +350,11 @@
                 <label for="unit">หน่วย</label>
                 <input type="text" id="unit" placeholder="เช่น ขวด, กล่อง, กก." />
               </div>
+
+              <div class="form-group">
+                <label for="price">ราคา</label>
+                <input type="number" id="price" min="0" step="0.01" inputmode="decimal" placeholder="เช่น 19.99" />
+              </div>
             </div>
 
             <div class="form-group full">
@@ -419,12 +424,13 @@
                 <th>ชื่อสินค้า</th>
                 <th>หมวดหมู่</th>
                 <th>หน่วย</th>
+                <th>ราคา</th>
                 <th>จัดการ</th>
               </tr>
             </thead>
             <tbody id="productTableBody">
               <tr>
-                <td colspan="5" class="empty-state">กำลังโหลดข้อมูล...</td>
+                <td colspan="6" class="empty-state">กำลังโหลดข้อมูล...</td>
               </tr>
             </tbody>
           </table>
@@ -491,6 +497,7 @@
         $("productName").disabled = true;
         $("category").disabled = true;
         $("unit").disabled = true;
+        $("price").disabled = true;
         $("description").disabled = true;
 
         $("saveBtn").classList.add("hidden");
@@ -505,6 +512,7 @@
         $("productName").disabled = false;
         $("category").disabled = false;
         $("unit").disabled = false;
+        $("price").disabled = false;
         $("description").disabled = false;
 
         $("saveBtn").classList.remove("hidden");
@@ -551,7 +559,38 @@
         return "บันทึกข้อมูลไม่สำเร็จ: Supabase ไม่อนุญาตให้แก้ไขแถวสินค้า กรุณารันไฟล์ sql/10_fix_products_edit_delete.sql ใน Supabase SQL Editor";
       }
 
+      if (error?.code === "42703" || /column .*price/i.test(error?.message || "")) {
+        return "บันทึกข้อมูลไม่สำเร็จ: ยังไม่มีคอลัมน์ราคาในตาราง products กรุณารันไฟล์ sql/10_fix_products_edit_delete.sql ใน Supabase SQL Editor";
+      }
+
       return "บันทึกข้อมูลไม่สำเร็จ: " + (error?.message || "ไม่สามารถบันทึกข้อมูลได้");
+    }
+
+    function parseProductPrice(value) {
+      const text = String(value ?? "").trim();
+      if (!text) return { ok: true, price: null };
+
+      const price = Number(text);
+      if (!Number.isFinite(price)) {
+        return { ok: false, message: "กรุณากรอกราคาเป็นตัวเลข" };
+      }
+
+      if (price < 0) {
+        return { ok: false, message: "ราคาต้องไม่ติดลบ" };
+      }
+
+      return { ok: true, price: Math.round(price * 100) / 100 };
+    }
+
+    function formatCurrency(value) {
+      const price = Number(value);
+      if (!Number.isFinite(price)) return "-";
+      return price.toLocaleString("th-TH", {
+        style: "currency",
+        currency: "THB",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
 
     function setFormMode(isEdit) {
@@ -663,7 +702,7 @@
       } catch (error) {
         showMessage("โหลดข้อมูลสินค้าไม่สำเร็จ: " + error.message, "error");
         $("productTableBody").innerHTML = `
-          <tr><td colspan="5" class="empty-state">โหลดข้อมูลสินค้าไม่สำเร็จ</td></tr>
+          <tr><td colspan="6" class="empty-state">โหลดข้อมูลสินค้าไม่สำเร็จ</td></tr>
         `;
       }
     }
@@ -682,6 +721,7 @@
             product_name,
             category_id,
             unit,
+            price,
             shelf_life_days,
             barcode,
             description,
@@ -758,7 +798,7 @@
       if (!products.length) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="5" class="empty-state">ไม่พบข้อมูลสินค้า</td>
+            <td colspan="6" class="empty-state">ไม่พบข้อมูลสินค้า</td>
           </tr>
         `;
         return;
@@ -791,6 +831,7 @@
 
             <td>${escapeHtml(item.categories?.name || "-")}</td>
             <td>${escapeHtml(item.unit || "-")}</td>
+            <td>${escapeHtml(formatCurrency(item.price))}</td>
 
             <td>
               <div class="action-group">
@@ -817,6 +858,7 @@
       $("productName").value = product.product_name || "";
       $("category").value = product.categories?.name || "";
       $("unit").value = product.unit || "";
+      $("price").value = product.price ?? "";
       $("description").value = product.description || "";
 
       setFormMode(true);
@@ -923,6 +965,7 @@
         const productName = $("productName").value.trim();
         const categoryName = $("category").value.trim();
         const unit = $("unit").value.trim();
+        const priceResult = parseProductPrice($("price").value);
         const description = $("description").value.trim();
 
         if (!productCode || !productName) {
@@ -947,6 +990,11 @@
           return;
         }
 
+        if (!priceResult.ok) {
+          showMessage(priceResult.message, "error");
+          return;
+        }
+
         const categoryId = await getOrCreateCategoryId(categoryName);
 
         const payload = {
@@ -955,6 +1003,7 @@
           product_name: productName,
           category_id: categoryId,
           unit: unit || null,
+          price: priceResult.price,
           description: description || null,
           updated_at: new Date().toISOString()
         };
@@ -966,13 +1015,13 @@
             .from("products")
             .update(payload)
             .eq("id", editingProductId)
-            .select("id, product_code, product_name, category_id, unit, description")
+            .select("id, product_code, product_name, category_id, unit, price, description")
             .single();
         } else {
           result = await supabaseClient
             .from("products")
             .insert([payload])
-            .select("id, product_code, product_name, category_id, unit, description")
+            .select("id, product_code, product_name, category_id, unit, price, description")
             .single();
         }
 
@@ -1003,7 +1052,7 @@
         await loadProducts();
       } else {
         $("productTableBody").innerHTML = `
-          <tr><td colspan="5" class="empty-state">เชื่อมต่อฐานข้อมูลไม่ได้</td></tr>
+          <tr><td colspan="6" class="empty-state">เชื่อมต่อฐานข้อมูลไม่ได้</td></tr>
         `;
       }
     }
