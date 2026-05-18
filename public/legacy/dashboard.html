@@ -4474,6 +4474,82 @@
       font-weight: 800;
     }
 
+    .purchase-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .purchase-summary-card {
+      padding: 14px;
+      border: 1px solid #dbe6f4;
+      border-radius: 14px;
+      background: #f8fafc;
+    }
+
+    .purchase-summary-card span {
+      display: block;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .purchase-summary-card strong {
+      display: block;
+      margin-top: 4px;
+      color: #0f172a;
+      font-size: clamp(22px, 2vw, 30px);
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .purchase-table-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .purchase-table-section {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid #dbe6f4;
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    .purchase-table-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .purchase-table-head h4 {
+      margin: 0;
+      color: #0f172a;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+
+    .purchase-table-head span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .purchase-table .product-main {
+      max-width: 320px;
+    }
+
     .intel-footer {
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
@@ -4540,6 +4616,10 @@
       .range-tabs span {
         min-width: 0;
         flex: 1;
+      }
+
+      .purchase-summary {
+        grid-template-columns: 1fr;
       }
 
       .status-donut-layout,
@@ -4979,6 +5059,55 @@
           <div class="purchase-recommendation-list" id="purchaseRecommendationList">
             <div class="empty-state">กำลังโหลดข้อมูล...</div>
           </div>
+          <div class="purchase-table-grid">
+            <section class="purchase-table-section">
+              <div class="purchase-table-head">
+                <h4>สินค้าหมดสต๊อก</h4>
+                <span id="purchaseOutCount">0 รายการ</span>
+              </div>
+              <div class="intel-table-wrap">
+                <table class="intel-table purchase-table">
+                  <thead>
+                    <tr>
+                      <th>สินค้า</th>
+                      <th>รหัส</th>
+                      <th>คงเหลือ</th>
+                      <th>ขายล่าสุด</th>
+                      <th>แนะนำให้สั่ง</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="purchaseOutRows">
+                    <tr><td colspan="6"><div class="empty-state">กำลังโหลดข้อมูล...</div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="purchase-table-section">
+              <div class="purchase-table-head">
+                <h4>สินค้าใกล้หมด / สต๊อกต่ำ</h4>
+                <span id="purchaseLowCount">0 รายการ</span>
+              </div>
+              <div class="intel-table-wrap">
+                <table class="intel-table purchase-table">
+                  <thead>
+                    <tr>
+                      <th>สินค้า</th>
+                      <th>รหัส</th>
+                      <th>คงเหลือ</th>
+                      <th>ขายล่าสุด</th>
+                      <th>แนะนำให้สั่ง</th>
+                      <th>สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="purchaseLowRows">
+                    <tr><td colspan="6"><div class="empty-state">กำลังโหลดข้อมูล...</div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
         </article>
 
         <div class="intel-footer">
@@ -5027,6 +5156,7 @@
       coverageDays: 14,
       reorderRows: []
     };
+    const DASHBOARD_FETCH_PAGE_SIZE = 1000;
 
     function getCurrentUser() {
       try {
@@ -5061,6 +5191,24 @@
       box.className = "message-box";
       box.textContent = "";
       box.style.display = "none";
+    }
+
+    async function fetchAllDashboardRows(createQuery) {
+      const rows = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + DASHBOARD_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await createQuery().range(from, to);
+        if (error) throw error;
+
+        const page = data || [];
+        rows.push(...page);
+        if (page.length < DASHBOARD_FETCH_PAGE_SIZE) break;
+        from += DASHBOARD_FETCH_PAGE_SIZE;
+      }
+
+      return rows;
     }
 
     function escapeHtml(value) {
@@ -5443,9 +5591,10 @@
 
     function buildReorderRows(products, batches, salesUploads, salesLines) {
       return buildSalesMetrics(products, batches, salesUploads, salesLines)
-        .filter(item => item.currentStock <= 0)
         .map(item => {
-          const recommendedQty = Math.ceil(item.avgDailySales * dashboardState.coverageDays);
+          const targetStock = Math.ceil(item.avgDailySales * dashboardState.coverageDays);
+          const recommendedQty = Math.max(0, Math.ceil(targetStock - Number(item.currentStock || 0)));
+          const purchaseStatus = Number(item.currentStock || 0) <= 0 ? "out" : "low";
           let badgeClass = "watch";
           let badgeText = "รอติดตาม";
 
@@ -5462,13 +5611,17 @@
 
           return {
             ...item,
+            targetStock,
             recommendedQty,
             reorderValue: calculateItemValue(recommendedQty, item.price),
+            purchaseStatus,
             badgeClass,
             badgeText
           };
         })
+        .filter(item => item.recommendedQty > 0 && (item.purchaseStatus === "out" || item.currentStock < item.targetStock))
         .sort((a, b) => {
+          if (a.purchaseStatus !== b.purchaseStatus) return a.purchaseStatus === "out" ? -1 : 1;
           const order = { critical: 0, warning: 1, estimated: 2, watch: 3 };
           if ((order[a.badgeClass] ?? 9) !== (order[b.badgeClass] ?? 9)) {
             return (order[a.badgeClass] ?? 9) - (order[b.badgeClass] ?? 9);
@@ -6074,37 +6227,73 @@
 
     function renderPurchaseRecommendations(reorderRows) {
       const el = document.getElementById("purchaseRecommendationList");
-      if (!el) return;
+      const outBody = document.getElementById("purchaseOutRows");
+      const lowBody = document.getElementById("purchaseLowRows");
+      if (!el || !outBody || !lowBody) return;
 
       const rows = (reorderRows || [])
         .filter(item => Number(item.recommendedQty || 0) > 0)
         .sort((a, b) => Number(b.reorderValue || 0) - Number(a.reorderValue || 0))
-        .slice(0, 8);
+      const outRows = rows.filter(item => item.purchaseStatus === "out");
+      const lowRows = rows.filter(item => item.purchaseStatus === "low");
+      const totalRecommendedQty = rows.reduce((sum, item) => sum + Number(item.recommendedQty || 0), 0);
 
       if (!rows.length) {
         el.innerHTML = `<div class="empty-state">ยังไม่มีสินค้าที่ระบบแนะนำให้สั่งซื้อจากยอดขายล่าสุด</div>`;
+        outBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">ยังไม่มีสินค้าหมดสต๊อกที่แนะนำให้สั่งซื้อ</div></td></tr>`;
+        lowBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">ยังไม่มีสินค้าสต๊อกต่ำที่แนะนำให้สั่งซื้อ</div></td></tr>`;
+        setTextWithTitle("purchaseOutCount", "0 รายการ");
+        setTextWithTitle("purchaseLowCount", "0 รายการ");
         return;
       }
 
-      el.innerHTML = rows.map((item, index) => `
-        <div class="purchase-row">
-          <div class="purchase-rank">${index + 1}</div>
-          <div>
-            <div class="purchase-title">${escapeHtml(item.product_name || "-")}</div>
-            <div class="purchase-meta">
-              <span class="purchase-chip">รหัส ${escapeHtml(item.product_code || "-")}</span>
-              <span class="purchase-chip">คงเหลือ ${escapeHtml(formatQtyCompact(item.currentStock))}</span>
-              <span class="purchase-chip">ขายล่าสุด ${escapeHtml(formatQtyCompact(item.recentSalesAmount))}</span>
-              <span class="purchase-chip">มูลค่าสั่งซื้อ ${escapeHtml(formatMoney(item.reorderValue))}</span>
-              <span class="purchase-chip">${escapeHtml(item.badgeText || "ควรสั่งซื้อ")}</span>
-            </div>
+      el.innerHTML = `
+        <div class="purchase-summary">
+          <div class="purchase-summary-card">
+            <span>สินค้าที่แนะนำทั้งหมด</span>
+            <strong>${escapeHtml(formatQtyCompact(rows.length))}</strong>
           </div>
-          <div class="purchase-qty">
-            ${escapeHtml(formatQtyCompact(item.recommendedQty))}
-            <span>แนะนำให้สั่ง</span>
+          <div class="purchase-summary-card">
+            <span>หมดสต๊อก</span>
+            <strong>${escapeHtml(formatQtyCompact(outRows.length))}</strong>
+          </div>
+          <div class="purchase-summary-card">
+            <span>จำนวนรวมที่แนะนำให้สั่ง</span>
+            <strong>${escapeHtml(formatQtyCompact(totalRecommendedQty))}</strong>
           </div>
         </div>
-      `).join("");
+      `;
+
+      function renderRows(items, emptyText) {
+        if (!items.length) {
+          return `<tr><td colspan="6"><div class="empty-state">${escapeHtml(emptyText)}</div></td></tr>`;
+        }
+
+        return items.map(item => `
+          <tr>
+            <td>
+              <div class="product-main">${escapeHtml(item.product_name || "-")}</div>
+              <div class="product-sub">หน่วย: ${escapeHtml(item.product_unit || "-")}</div>
+            </td>
+            <td><strong>${escapeHtml(item.product_code || "-")}</strong></td>
+            <td><strong>${escapeHtml(formatQtyCompact(item.currentStock))}</strong></td>
+            <td>
+              <strong>${escapeHtml(formatQtyCompact(item.recentSalesAmount))}</strong>
+              <div class="product-sub">ย้อนหลัง 14 วัน</div>
+            </td>
+            <td>
+              <strong>${escapeHtml(formatQtyCompact(item.recommendedQty))}</strong>
+              <div class="product-sub">เป้าหมาย ${escapeHtml(formatQtyCompact(item.targetStock))}</div>
+            </td>
+            <td><span class="decision-badge ${escapeHtml(item.badgeClass)}">${escapeHtml(item.badgeText || "ควรสั่งซื้อ")}</span></td>
+          </tr>
+        `).join("");
+      }
+
+      outBody.innerHTML = renderRows(outRows, "ยังไม่มีสินค้าหมดสต๊อกที่แนะนำให้สั่งซื้อ");
+      lowBody.innerHTML = renderRows(lowRows, "ยังไม่มีสินค้าสต๊อกต่ำที่แนะนำให้สั่งซื้อ");
+      setTextWithTitle("purchaseOutCount", `${formatQtyCompact(outRows.length)} รายการ`);
+      setTextWithTitle("purchaseLowCount", `${formatQtyCompact(lowRows.length)} รายการ`);
     }
 
     function renderInventoryIntelligence({
@@ -6302,13 +6491,13 @@
         const recentSalesStart = new Date();
         recentSalesStart.setDate(recentSalesStart.getDate() - 45);
 
-        const [productsResult, batchesResult, damagesResult, uploadsResult] = await Promise.all([
-          supabaseClient
+        const [products, batchesRaw, damagesRaw, uploadsRaw] = await Promise.all([
+          fetchAllDashboardRows(() => supabaseClient
             .from("products")
             .select("id, product_code, barcode, product_name, unit, price")
-            .order("product_name", { ascending: true }),
+            .order("product_name", { ascending: true })),
 
-          supabaseClient
+          fetchAllDashboardRows(() => supabaseClient
             .from("batches")
             .select(`
               id,
@@ -6333,9 +6522,9 @@
                 name
               )
             `)
-            .order("expiry_date", { ascending: true }),
+            .order("expiry_date", { ascending: true })),
 
-          supabaseClient
+          fetchAllDashboardRows(() => supabaseClient
             .from("damage_reports")
             .select(`
               id,
@@ -6351,39 +6540,34 @@
               reported_at,
               updated_at
             `)
-            .order("reported_at", { ascending: false }),
+            .order("reported_at", { ascending: false })),
 
-          supabaseClient
+          fetchAllDashboardRows(() => supabaseClient
             .from("sales_uploads")
             .select("id, sales_date, uploaded_at, status")
             .gte("sales_date", recentSalesStart.toISOString().slice(0, 10))
-            .order("sales_date", { ascending: false })
+            .order("sales_date", { ascending: false }))
         ]);
 
-        if (productsResult.error) throw productsResult.error;
-        if (batchesResult.error) throw batchesResult.error;
-        if (damagesResult.error) throw damagesResult.error;
-        if (uploadsResult.error) throw uploadsResult.error;
-
-        const uploadIds = (uploadsResult.data || []).map(item => Number(item.id)).filter(Boolean);
+        const uploadIds = (uploadsRaw || []).map(item => Number(item.id)).filter(Boolean);
         let salesLines = [];
 
         if (uploadIds.length) {
-          const salesLinesResult = await supabaseClient
-            .from("sales_lines")
-            .select("sales_upload_id, product_id, product_barcode, product_name, sold_qty, created_at")
-            .in("sales_upload_id", uploadIds);
-
-          if (salesLinesResult.error) throw salesLinesResult.error;
-          salesLines = salesLinesResult.data || [];
+          for (let i = 0; i < uploadIds.length; i += 100) {
+            const uploadIdChunk = uploadIds.slice(i, i + 100);
+            const chunkRows = await fetchAllDashboardRows(() => supabaseClient
+              .from("sales_lines")
+              .select("sales_upload_id, product_id, product_barcode, product_name, sold_qty, created_at")
+              .in("sales_upload_id", uploadIdChunk));
+            salesLines.push(...chunkRows);
+          }
         }
 
-        const products = productsResult.data || [];
         const productPriceMap = new Map(
           products.map(item => [Number(item.id), Number(item.price || 0)])
         );
 
-        const batches = (batchesResult.data || []).map(item => {
+        const batches = (batchesRaw || []).map(item => {
           const daysLeft = calculateDaysLeft(item.expiry_date);
           const calculatedStatus = getCalculatedStatus(daysLeft);
           const finalHandlingStatus = getFinalHandlingStatus(item);
@@ -6402,7 +6586,7 @@
           };
         });
 
-        const damageReports = (damagesResult.data || []).map(item => {
+        const damageReports = (damagesRaw || []).map(item => {
           const normalizedStatus = normalizeDamageStatus(item.damage_status);
 
           return {
@@ -6480,11 +6664,11 @@
         const urgentProductGroups = buildUrgentProductGroups(urgentExpireItems);
         const issueRanking = buildIssueRanking(urgentExpireItems, activeDamageItems);
         const expiryTrend = buildExpiryTrend(urgentExpireItems);
-        const reorderRows = buildReorderRows(products, batches, uploadsResult.data || [], salesLines);
-        const salesTrend = buildSalesTrendData(uploadsResult.data || [], salesLines);
-        const topSalesProducts = buildTopSalesProducts(products, uploadsResult.data || [], salesLines);
+        const reorderRows = buildReorderRows(products, batches, uploadsRaw || [], salesLines);
+        const salesTrend = buildSalesTrendData(uploadsRaw || [], salesLines);
+        const topSalesProducts = buildTopSalesProducts(products, uploadsRaw || [], salesLines);
         const sales14Total = topSalesProducts.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-        const sales30Metrics = buildSalesMetrics(products, batches, uploadsResult.data || [], salesLines);
+        const sales30Metrics = buildSalesMetrics(products, batches, uploadsRaw || [], salesLines);
         const avgDailySalesAll = sales30Metrics.reduce((sum, item) => sum + Number(item.avgDailySales || 0), 0);
         dashboardState.reorderRows = reorderRows;
 
@@ -6502,7 +6686,7 @@
         document.getElementById("alertReorderCount").textContent = reorderRows.length;
         document.getElementById("sales14Value").textContent = formatQtyCompact(sales14Total);
         document.getElementById("salesAvgDailyValue").textContent = formatQtyCompact(avgDailySalesAll);
-        document.getElementById("salesDocsValue").textContent = formatQtyCompact((uploadsResult.data || []).length);
+        document.getElementById("salesDocsValue").textContent = formatQtyCompact((uploadsRaw || []).length);
 
         updateManagerCommandCenter({
           expiredItems,
@@ -6539,7 +6723,7 @@
           handledCount,
           fefoBuckets,
           reorderRows,
-          salesUploads: uploadsResult.data || [],
+          salesUploads: uploadsRaw || [],
           salesLines
         });
         renderFefoBucketChart(fefoBuckets);
