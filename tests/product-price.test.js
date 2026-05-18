@@ -73,6 +73,7 @@ assert.match(productsHtml, /price:\s*priceResult\.price/, "payload should includ
 assert.match(productsHtml, /const barcode = \$\("barcode"\)\.value\.trim\(\) \|\| productCode/, "submit handler should read barcode separately");
 assert.match(productsHtml, /product_code:\s*productCode,\s*barcode,/s, "payload should save barcode separately");
 assert.match(productsHtml, /select\("id, product_code, barcode, product_name, category_id, unit, price, description"\)/, "insert/update should return barcode and price");
+assert.match(productsHtml, /barcode\.toLowerCase\(\)\.includes\(search\)/, "product table search should match barcode");
 assert.match(productsHtml, /formatCurrency\(item\.price\)/, "product table should display formatted price");
 
 assert.match(productsSql, /price numeric\(12,\s*2\) null/, "products schema should define numeric price");

@@ -410,7 +410,7 @@
               <input
                 type="text"
                 id="searchInput"
-                placeholder="ค้นหารหัสสินค้า ชื่อสินค้า หรือหมวดหมู่"
+                placeholder="ค้นหารหัสสินค้า / บาร์โค้ด / ชื่อสินค้า / หมวดหมู่"
                 oninput="renderProducts()"
               />
             </div>
@@ -788,9 +788,11 @@
         products = products.filter(item => {
           const categoryName = item.categories?.name || "";
           const code = item.product_code || "";
+          const barcode = item.barcode || "";
 
           return (
             code.toLowerCase().includes(search) ||
+            barcode.toLowerCase().includes(search) ||
             (item.product_name || "").toLowerCase().includes(search) ||
             categoryName.toLowerCase().includes(search)
           );
