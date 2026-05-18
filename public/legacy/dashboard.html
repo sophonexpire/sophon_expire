@@ -4265,15 +4265,13 @@
       margin-top: 18px;
     }
 
-    .fefo-cards,
-    .value-risk-grid {
+    .fefo-cards {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
 
-    .fefo-card,
-    .risk-card {
+    .fefo-card {
       min-width: 0;
       padding: 16px;
       border-radius: 14px;
@@ -4281,8 +4279,7 @@
       border: 1px solid transparent;
     }
 
-    .fefo-card strong,
-    .risk-card strong {
+    .fefo-card strong {
       display: block;
       margin-top: 4px;
       font-size: clamp(24px, 2.4vw, 34px);
@@ -4290,8 +4287,7 @@
       font-variant-numeric: tabular-nums;
     }
 
-    .fefo-card span,
-    .risk-card span {
+    .fefo-card span {
       color: #64748b;
       font-size: 12px;
       line-height: 1.45;
@@ -4471,8 +4467,7 @@
       }
 
       .status-donut-layout,
-      .fefo-cards,
-      .value-risk-grid {
+      .fefo-cards {
         grid-template-columns: 1fr;
       }
 
@@ -4883,23 +4878,13 @@
           </article>
         </div>
 
-        <div class="intel-grid">
-          <article class="intel-card">
-            <h3>FEFO Status (First Expired, First Out)</h3>
-            <p class="intel-muted">ช่วยจัดลำดับการหยิบใช้ตามวันหมดอายุ</p>
-            <div class="fefo-status" id="fefoStatusContent">
-              <div class="empty-state">กำลังโหลดข้อมูล...</div>
-            </div>
-          </article>
-
-          <article class="intel-card">
-            <h3>ความเสี่ยงแยกตามมูลค่า</h3>
-            <p class="intel-muted">มูลค่าสินค้าตามระดับความเสี่ยง</p>
-            <div class="value-risk-grid" id="valueRiskContent">
-              <div class="empty-state">กำลังโหลดข้อมูล...</div>
-            </div>
-          </article>
-        </div>
+        <article class="intel-card">
+          <h3>FEFO Status (First Expired, First Out)</h3>
+          <p class="intel-muted">ช่วยจัดลำดับการหยิบใช้ตามวันหมดอายุ</p>
+          <div class="fefo-status" id="fefoStatusContent">
+            <div class="empty-state">กำลังโหลดข้อมูล...</div>
+          </div>
+        </article>
 
         <div class="intel-grid">
           <article class="intel-card">
@@ -6013,40 +5998,6 @@
       `;
     }
 
-    function renderValueRisk({ expiredItems, warningItems, batches, damageItems }) {
-      const el = document.getElementById("valueRiskContent");
-      if (!el) return;
-      const expiredValue = expiredItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
-      const warningValue = warningItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
-      const safeValue = batches
-        .filter(item => item.displayStatus === "safe" && item.quantity_num > 0)
-        .reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
-      const damageValue = damageItems.reduce((sum, item) => sum + Number(item.damage_value || 0), 0);
-      const totalValue = expiredValue + warningValue + safeValue + damageValue;
-
-      el.innerHTML = `
-        <div class="risk-card tone-red">
-          <span>ความเสี่ยงสูง</span>
-          <strong>${escapeHtml(formatMoney(expiredValue))}</strong>
-          <span>หมดอายุแล้ว</span>
-        </div>
-        <div class="risk-card tone-orange">
-          <span>ความเสี่ยงปานกลาง</span>
-          <strong>${escapeHtml(formatMoney(warningValue))}</strong>
-          <span>ใกล้หมดอายุภายใน 60 วัน</span>
-        </div>
-        <div class="risk-card tone-blue">
-          <span>ความเสี่ยงต่ำ</span>
-          <strong>${escapeHtml(formatMoney(safeValue))}</strong>
-          <span>มากกว่า 60 วัน</span>
-        </div>
-        <div class="risk-card" style="grid-column:1 / -1;">
-          <span>มูลค่ารวมสินค้าทั้งหมด</span>
-          <strong>${escapeHtml(formatMoney(totalValue))}</strong>
-        </div>
-      `;
-    }
-
     function renderActionTasks({ warningItems, expiredItems, damageItems, handledCount }) {
       const el = document.getElementById("actionTasksContent");
       if (!el) return;
@@ -6145,7 +6096,6 @@
         handledCount
       });
       renderFefoStatus(fefoBuckets);
-      renderValueRisk({ expiredItems, warningItems, batches, damageItems });
       renderActionTasks({ warningItems, expiredItems, damageItems, handledCount });
       renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows });
       setTextWithTitle("trendTotalChip", `สต๊อกมีอยู่ ${formatQtyCompact(activeBatchCount)} ล็อต`);
