@@ -704,6 +704,7 @@
               <tr>
                 <th>สินค้า</th>
                 <th>บาร์โค้ด</th>
+                <th>รหัสสินค้า</th>
                 <th>หน่วย</th>
                 <th>เลขล็อต</th>
                 <th>รับเข้า</th>
@@ -1424,7 +1425,7 @@
       if (!filtered.length) {
         tableBody.innerHTML = `
           <tr>
-            <td colspan="11" class="empty-state">ไม่พบข้อมูลล็อตสินค้า</td>
+            <td colspan="12" class="empty-state">ไม่พบข้อมูลล็อตสินค้า</td>
           </tr>
         `;
         return;
@@ -1455,6 +1456,7 @@
             </td>
 
             <td>${escapeHtml(item.product_barcode || "-")}</td>
+            <td>${escapeHtml(item.product_code || "-")}</td>
             <td>${escapeHtml(item.product_unit || "-")}</td>
 
             <td>
