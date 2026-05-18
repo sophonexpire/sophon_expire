@@ -2434,6 +2434,419 @@
         grid-template-columns: 30px minmax(0, 1fr) !important;
       }
     }
+
+    /* App-like dashboard polish inspired by the requested reference. */
+    .dashboard-shell {
+      max-width: 1180px !important;
+      padding: clamp(14px, 2.4vw, 30px) !important;
+      gap: 14px !important;
+    }
+
+    .topbar,
+    .manager-command,
+    .dashboard-intro,
+    .overview-panel,
+    .card,
+    .chart-card,
+    .summary-box,
+    .summary-alert,
+    .focus-row,
+    .mini-card,
+    .rank-row,
+    .table-wrap {
+      border-radius: 18px !important;
+    }
+
+    .page::before {
+      display: block !important;
+      background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.10), transparent 28%) !important;
+    }
+
+    .dashboard-intro {
+      display: grid !important;
+      margin-top: 0 !important;
+      padding: clamp(16px, 2vw, 24px) !important;
+      border-radius: 18px !important;
+      background: #ffffff !important;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto !important;
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(14px);
+      border-color: rgba(219, 227, 239, 0.88) !important;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06) !important;
+    }
+
+    .page-header {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      column-gap: 14px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .page-header::before {
+      content: "";
+      width: 34px;
+      height: 26px;
+      display: block;
+      border-top: 4px solid #0f172a;
+      border-bottom: 4px solid #0f172a;
+      box-shadow: inset 0 11px 0 #0f172a;
+      border-radius: 2px;
+    }
+
+    .page-header h1 {
+      font-size: clamp(24px, 4vw, 34px) !important;
+      line-height: 1.15 !important;
+      white-space: normal !important;
+      overflow-wrap: normal !important;
+    }
+
+    .page-header p {
+      display: block !important;
+      grid-column: 2;
+      margin-top: 3px !important;
+      font-size: clamp(13px, 1.8vw, 15px) !important;
+      line-height: 1.55 !important;
+      color: #334155 !important;
+      max-width: 720px;
+    }
+
+    .topbar-right {
+      display: flex !important;
+      gap: 12px !important;
+      align-items: center !important;
+      flex-wrap: wrap !important;
+      justify-content: flex-end !important;
+    }
+
+    .summary-box {
+      min-width: 0 !important;
+      padding: 12px 14px !important;
+      border-radius: 14px !important;
+      background: #ffffff !important;
+      box-shadow: none !important;
+    }
+
+    .summary-box .label {
+      display: block !important;
+      color: #475569 !important;
+      letter-spacing: 0 !important;
+      text-transform: none !important;
+      font-size: 12px !important;
+    }
+
+    .summary-box .value {
+      font-size: 15px !important;
+      line-height: 1.35 !important;
+      overflow-wrap: anywhere;
+    }
+
+    .dashboard-toolbar {
+      align-items: center;
+      gap: 10px;
+    }
+
+    .refresh-status,
+    #dashboardRefreshBtn {
+      min-height: 48px;
+      border-radius: 14px !important;
+    }
+
+    .refresh-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 180px;
+      padding: 0 14px;
+      border: 1px solid #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+      text-align: center;
+    }
+
+    .manager-command {
+      grid-template-columns: 1fr !important;
+      padding: clamp(14px, 2vw, 22px) !important;
+      border: 1px solid #dbe3ef !important;
+      border-radius: 20px !important;
+      background: #ffffff !important;
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.07) !important;
+    }
+
+    .manager-head {
+      margin-bottom: 18px !important;
+      align-items: center !important;
+    }
+
+    .manager-kicker {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #eef6ff;
+      color: #1d4ed8 !important;
+      font-size: 12px !important;
+      font-weight: 900 !important;
+    }
+
+    .manager-title {
+      margin-top: 8px !important;
+      font-size: clamp(22px, 3vw, 30px) !important;
+      line-height: 1.22 !important;
+      white-space: normal !important;
+    }
+
+    .manager-sub,
+    .subtext,
+    .chart-sub,
+    .toolbar-note,
+    .section-heading p {
+      display: block !important;
+    }
+
+    .manager-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+    }
+
+    .manager-metric {
+      position: relative;
+      min-height: 164px !important;
+      padding: 18px 16px !important;
+      border-radius: 18px !important;
+      background: #ffffff !important;
+      border-color: #dbe3ef !important;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+    }
+
+    .manager-metric::after {
+      content: "";
+      position: absolute;
+      inset: auto 14px 12px 14px;
+      height: 4px;
+      border-radius: 999px;
+      background: #dbeafe;
+    }
+
+    .manager-metric.critical::after { background: #2563eb; }
+    .manager-metric.warning::after { background: #ef4444; }
+    .manager-metric.info::after { background: #f97316; }
+    .manager-metric.good::after { background: #16a34a; }
+
+    .manager-metric-label {
+      min-height: 28px;
+      line-height: 1.35 !important;
+    }
+
+    .manager-metric-value {
+      margin-top: 12px !important;
+      font-size: clamp(30px, 4vw, 40px) !important;
+      line-height: 1.05 !important;
+    }
+
+    .manager-metric-money {
+      font-size: clamp(15px, 2vw, 18px) !important;
+      line-height: 1.35 !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere;
+    }
+
+    .manager-progress {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: clamp(16px, 3vw, 28px);
+      align-items: center;
+      margin-top: 14px !important;
+      border-radius: 20px !important;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%) !important;
+    }
+
+    .progress-header {
+      display: grid !important;
+      justify-items: center !important;
+      gap: 8px !important;
+      margin: 0 !important;
+      text-align: center;
+    }
+
+    #managerProgressText {
+      display: grid;
+      place-items: center;
+      width: 138px;
+      height: 138px;
+      border-radius: 999px;
+      color: #0f172a !important;
+      font-size: 34px !important;
+      background:
+        radial-gradient(circle at center, #ffffff 0 55%, transparent 56%),
+        conic-gradient(#2563eb 0 var(--progress-angle, 0deg), #e2e8f0 var(--progress-angle, 0deg) 360deg);
+      box-shadow: inset 0 0 0 1px #dbe3ef;
+    }
+
+    .progress-track,
+    .manager-decision,
+    .manager-value-grid {
+      grid-column: 2;
+    }
+
+    .progress-track {
+      height: 12px !important;
+    }
+
+    .manager-value-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
+
+    .manager-value-pill {
+      border-radius: 16px !important;
+      padding: 14px !important;
+    }
+
+    .priority-panel {
+      border-radius: 20px !important;
+      background: #ffffff !important;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+    }
+
+    .priority-title::before {
+      content: "1. ";
+      color: #f97316;
+    }
+
+    .priority-row {
+      grid-template-columns: 36px minmax(0, 1fr) !important;
+      border-color: #e5edf7 !important;
+    }
+
+    .priority-rank {
+      border-radius: 999px !important;
+      background: #f97316 !important;
+    }
+
+    .priority-action {
+      min-height: 40px;
+      border-radius: 14px;
+      background: #eef6ff;
+      font-weight: 900;
+    }
+
+    .card,
+    .chart-card,
+    .overview-panel {
+      border: 1px solid #dbe3ef !important;
+      border-radius: 20px !important;
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04) !important;
+    }
+
+    .reorder-table th,
+    .reorder-table td {
+      white-space: normal !important;
+      line-height: 1.55 !important;
+    }
+
+    @media (max-width: 960px) {
+      .dashboard-shell {
+        max-width: 760px !important;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr !important;
+        position: static;
+      }
+
+      .topbar-right,
+      .dashboard-toolbar {
+        justify-content: stretch !important;
+      }
+
+      .summary-box,
+      .dashboard-toolbar,
+      .refresh-status,
+      #dashboardRefreshBtn {
+        width: 100% !important;
+      }
+
+      .manager-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+
+      .manager-progress {
+        grid-template-columns: 1fr !important;
+      }
+
+      .progress-track,
+      .manager-decision,
+      .manager-value-grid {
+        grid-column: 1;
+      }
+
+      .manager-value-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page {
+        padding-bottom: 78px !important;
+      }
+
+      .dashboard-shell {
+        padding: 12px !important;
+        gap: 12px !important;
+      }
+
+      .page-header {
+        grid-template-columns: 36px minmax(0, 1fr);
+        column-gap: 10px;
+      }
+
+      .page-header::before {
+        width: 28px;
+        height: 22px;
+        border-top-width: 3px;
+        border-bottom-width: 3px;
+        box-shadow: inset 0 9px 0 #0f172a;
+      }
+
+      .page-header h1 {
+        font-size: 24px !important;
+      }
+
+      .manager-head {
+        display: grid !important;
+        gap: 12px !important;
+      }
+
+      .manager-updated {
+        width: fit-content;
+      }
+
+      .manager-metrics {
+        grid-template-columns: 1fr !important;
+      }
+
+      .manager-metric {
+        min-height: 0 !important;
+      }
+
+      #managerProgressText {
+        width: 118px;
+        height: 118px;
+        font-size: 30px !important;
+      }
+
+      .priority-row {
+        grid-template-columns: 32px minmax(0, 1fr) !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -4005,6 +4418,7 @@
       document.getElementById("managerReorderPressure").textContent = reorderRows.length;
       document.getElementById("managerClosedWork").textContent = handledCount;
       document.getElementById("managerProgressText").textContent = `${progress}%`;
+      document.getElementById("managerProgressText").style.setProperty("--progress-angle", `${Math.max(0, Math.min(progress, 100)) * 3.6}deg`);
       document.getElementById("managerProgressSubtext").textContent =
         `ปิดงานแล้ว ${formatQtyCompact(handledCount)} จาก ${formatQtyCompact(totalWork)} งาน`;
       document.getElementById("managerProgressBar").style.width = `${progress}%`;
