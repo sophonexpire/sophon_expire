@@ -325,7 +325,7 @@
             <div class="form-group full">
               <label for="barcode">บาร์โค้ดสินค้า</label>
               <div class="barcode-row">
-                <input type="text" id="barcode" placeholder="กรอกหรือสแกนบาร์โค้ด ถ้าไม่ใส่ระบบจะใช้รหัสสินค้า" />
+              <input type="text" id="barcode" placeholder="กรอกหรือสแกนบาร์โค้ด (แก้ไขได้)" />
                 <button type="button" class="btn-success" id="scanBtn" onclick="startProductScanner()">สแกนบาร์โค้ด</button>
                 <button type="button" class="btn-secondary" id="closeCameraBtn" onclick="stopProductScanner()">ปิดกล้อง</button>
               </div>
@@ -972,7 +972,8 @@
         showMessage("กำลังบันทึกข้อมูล...", "info");
 
         const productCode = $("productCode").value.trim();
-        const barcode = $("barcode").value.trim() || productCode;
+        const barcodeInput = $("barcode").value.trim();
+        const barcode = barcodeInput || (editingProductId ? "" : productCode);
         const productName = $("productName").value.trim();
         const categoryName = $("category").value.trim();
         const unit = $("unit").value.trim();
@@ -993,8 +994,8 @@
 
           return existingCode === nextCode ||
             existingBarcode === nextCode ||
-            existingCode === nextBarcode ||
-            existingBarcode === nextBarcode;
+            (nextBarcode && existingCode === nextBarcode) ||
+            (nextBarcode && existingBarcode === nextBarcode);
         });
 
         if (duplicateProduct) {
@@ -1011,7 +1012,7 @@
 
         const payload = {
           product_code: productCode,
-          barcode,
+          barcode: barcode || null,
           product_name: productName,
           category_id: categoryId,
           unit: unit || null,

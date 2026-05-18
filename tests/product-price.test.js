@@ -23,16 +23,16 @@ function parseProductPrice(value) {
   return { ok: true, price: Math.round(price * 100) / 100 };
 }
 
-function buildProductPayload({ productCode, barcode = "", productName, categoryId = null, unit = "", priceValue = "", description = "" }) {
+function buildProductPayload({ productCode, barcode = "", isEdit = false, productName, categoryId = null, unit = "", priceValue = "", description = "" }) {
   const priceResult = parseProductPrice(priceValue);
   if (!priceResult.ok) throw new Error(priceResult.message);
 
   const cleanProductCode = productCode.trim();
-  const cleanBarcode = barcode.trim() || cleanProductCode;
+  const cleanBarcode = barcode.trim() || (isEdit ? "" : cleanProductCode);
 
   return {
     product_code: cleanProductCode,
-    barcode: cleanBarcode,
+    barcode: cleanBarcode || null,
     product_name: productName.trim(),
     category_id: categoryId,
     unit: unit.trim() || null,
@@ -66,12 +66,21 @@ const fallbackPayload = buildProductPayload({
 });
 assert.strictEqual(fallbackPayload.barcode, "SKU-FALLBACK-1");
 
+const editClearedBarcodePayload = buildProductPayload({
+  productCode: "SKU-EDIT-1",
+  barcode: "",
+  isEdit: true,
+  productName: "Editable Barcode Product"
+});
+assert.strictEqual(editClearedBarcodePayload.barcode, null);
+
 assert.match(productsHtml, /id="price"/, "product form should include a price input");
 assert.match(productsHtml, /id="barcode"/, "product form should include a separate barcode input");
 assert.match(productsHtml, /parseProductPrice\(\$\("price"\)\.value\)/, "submit handler should validate price");
 assert.match(productsHtml, /price:\s*priceResult\.price/, "payload should include price");
-assert.match(productsHtml, /const barcode = \$\("barcode"\)\.value\.trim\(\) \|\| productCode/, "submit handler should read barcode separately");
-assert.match(productsHtml, /product_code:\s*productCode,\s*barcode,/s, "payload should save barcode separately");
+assert.match(productsHtml, /const barcodeInput = \$\("barcode"\)\.value\.trim\(\)/, "submit handler should read barcode separately");
+assert.match(productsHtml, /const barcode = barcodeInput \|\| \(editingProductId \? "" : productCode\)/, "edit flow should allow clearing barcode");
+assert.match(productsHtml, /barcode:\s*barcode \|\| null/, "payload should save barcode separately");
 assert.match(productsHtml, /select\("id, product_code, barcode, product_name, category_id, unit, price, description"\)/, "insert/update should return barcode and price");
 assert.match(productsHtml, /barcode\.toLowerCase\(\)\.includes\(search\)/, "product table search should match barcode");
 assert.match(productsHtml, /formatCurrency\(item\.price\)/, "product table should display formatted price");
