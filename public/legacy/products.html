@@ -605,7 +605,7 @@
       const savedBarcode = normalizeBarcodeForCompare(data?.barcode);
       const targetBarcode = normalizeBarcodeForCompare(expectedBarcode);
       if (savedBarcode !== targetBarcode) {
-        throw new Error(`บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล (ต้องการ: ${targetBarcode || "-"}, ปัจจุบัน: ${savedBarcode || "-"})`);
+        throw new Error(`บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล (ต้องการ: ${targetBarcode || "-"}, ปัจจุบัน: ${savedBarcode || "-"}) กรุณารัน sql/11_fix_product_barcode_persistence.sql ใน Supabase`);
       }
     }
 
@@ -625,7 +625,7 @@
       const savedBarcode = normalizeBarcodeForCompare(data?.barcode);
       const targetBarcode = normalizeBarcodeForCompare(barcode);
       if (savedBarcode !== targetBarcode) {
-        throw new Error(`บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล (ต้องการ: ${targetBarcode || "-"}, ปัจจุบัน: ${savedBarcode || "-"})`);
+        throw new Error(`บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล (ต้องการ: ${targetBarcode || "-"}, ปัจจุบัน: ${savedBarcode || "-"}) กรุณารัน sql/11_fix_product_barcode_persistence.sql ใน Supabase`);
       }
 
       return data;
