@@ -1135,6 +1135,7 @@
               <option value="review">รอตรวจสอบ</option>
               <option value="expired">หมดอายุ</option>
               <option value="warning">ใกล้หมดอายุ</option>
+              <option value="soldout">หมดสต๊อก</option>
               <option value="safe">ปกติ</option>
             </select>
 
@@ -4605,8 +4606,13 @@ function formatEditorTimestamp(value) {
       const reviewInfo = getLatestManagerReviewChange(groupItems);
       const hasManagerFlag = reviewInfo.hasFlag;
       const hasDiff = reviewInfo.variance !== 0;
+      const totalRemaining = groupItems.reduce(
+        (sum, item) => sum + normalizeNumber(item.quantity_remaining),
+        0
+      );
 
       if (filter === "review") return hasManagerFlag || hasDiff;
+      if (filter === "soldout") return totalRemaining <= 0;
       return groupItems.some(item => item.calculated_status === filter);
     });
   }
