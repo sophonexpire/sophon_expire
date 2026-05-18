@@ -4337,7 +4337,8 @@
     .fefo-bar span:nth-child(3) { background: #2563eb; }
 
     .task-list,
-    .recommendation-list {
+    .recommendation-list,
+    .purchase-recommendation-list {
       display: grid;
       gap: 12px;
       margin-top: 16px;
@@ -4396,6 +4397,81 @@
       font-size: 18px;
       font-weight: 900;
       font-variant-numeric: tabular-nums;
+    }
+
+    .purchase-recommendation-card {
+      background:
+        radial-gradient(circle at 90% 0%, rgba(37, 99, 235, 0.08), transparent 28%),
+        #ffffff;
+    }
+
+    .purchase-row {
+      display: grid;
+      grid-template-columns: 46px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid #dbe6f4;
+      border-radius: 15px;
+      background: #ffffff;
+    }
+
+    .purchase-rank {
+      width: 46px;
+      height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .purchase-title {
+      color: #0f172a;
+      font-weight: 900;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .purchase-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 7px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .purchase-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      font-weight: 800;
+    }
+
+    .purchase-qty {
+      min-width: 128px;
+      text-align: right;
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 22px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .purchase-qty span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .intel-footer {
@@ -4475,8 +4551,14 @@
         grid-template-columns: 42px minmax(0, 1fr);
       }
 
-      .task-value {
+      .purchase-row {
+        grid-template-columns: 46px minmax(0, 1fr);
+      }
+
+      .task-value,
+      .purchase-qty {
         grid-column: 2;
+        text-align: left;
       }
     }
   </style>
@@ -4886,26 +4968,18 @@
           </div>
         </article>
 
-        <div class="intel-grid">
-          <article class="intel-card">
-            <div class="intel-card-head inline">
-              <div>
-                <h3>งานที่ต้องดำเนินการ</h3>
-              </div>
-              <a href="expire_returns.html">ดูทั้งหมด</a>
+        <article class="intel-card purchase-recommendation-card">
+          <div class="intel-card-head inline">
+            <div>
+              <h3>แนะนำสินค้าที่ควรสั่งซื้อ</h3>
+              <p class="intel-muted">คำนวณจากยอดขายล่าสุดและสต๊อกคงเหลือในฐานข้อมูล</p>
             </div>
-            <div class="task-list" id="actionTasksContent">
-              <div class="empty-state">กำลังโหลดข้อมูล...</div>
-            </div>
-          </article>
-
-          <article class="intel-card">
-            <h3>คำแนะนำสำหรับผู้จัดการ</h3>
-            <div class="recommendation-list" id="managerRecommendationList">
-              <div class="empty-state">กำลังโหลดข้อมูล...</div>
-            </div>
-          </article>
-        </div>
+            <a href="stock_in.html">รับสินค้าเข้า</a>
+          </div>
+          <div class="purchase-recommendation-list" id="purchaseRecommendationList">
+            <div class="empty-state">กำลังโหลดข้อมูล...</div>
+          </div>
+        </article>
 
         <div class="intel-footer">
           <div class="report-info-icon" aria-hidden="true">i</div>
@@ -5998,66 +6072,36 @@
       `;
     }
 
-    function renderActionTasks({ warningItems, expiredItems, damageItems, handledCount }) {
-      const el = document.getElementById("actionTasksContent");
+    function renderPurchaseRecommendations(reorderRows) {
+      const el = document.getElementById("purchaseRecommendationList");
       if (!el) return;
-      const rows = [
-        { icon: "◷", tone: "tone-orange", title: "ตรวจสอบและจัดการสินค้าใกล้หมดอายุ (ภายใน 60 วัน)", value: warningItems.length },
-        { icon: "!", tone: "tone-red", title: "ตรวจสอบสินค้าหมดอายุ", value: expiredItems.length },
-        { icon: "✓", tone: "tone-green", title: "ติดตามการคืนสินค้า / เคลม", value: handledCount },
-        { icon: "□", tone: "tone-purple", title: "ตรวจสอบสินค้าชำรุด", value: damageItems.length }
-      ];
 
-      el.innerHTML = rows.map(item => `
-        <div class="task-row">
-          <div class="task-icon ${item.tone}">${escapeHtml(item.icon)}</div>
+      const rows = (reorderRows || [])
+        .filter(item => Number(item.recommendedQty || 0) > 0)
+        .sort((a, b) => Number(b.reorderValue || 0) - Number(a.reorderValue || 0))
+        .slice(0, 8);
+
+      if (!rows.length) {
+        el.innerHTML = `<div class="empty-state">ยังไม่มีสินค้าที่ระบบแนะนำให้สั่งซื้อจากยอดขายล่าสุด</div>`;
+        return;
+      }
+
+      el.innerHTML = rows.map((item, index) => `
+        <div class="purchase-row">
+          <div class="purchase-rank">${index + 1}</div>
           <div>
-            <div class="task-title">${escapeHtml(item.title)}</div>
+            <div class="purchase-title">${escapeHtml(item.product_name || "-")}</div>
+            <div class="purchase-meta">
+              <span class="purchase-chip">รหัส ${escapeHtml(item.product_code || "-")}</span>
+              <span class="purchase-chip">คงเหลือ ${escapeHtml(formatQtyCompact(item.currentStock))}</span>
+              <span class="purchase-chip">ขายล่าสุด ${escapeHtml(formatQtyCompact(item.recentSalesAmount))}</span>
+              <span class="purchase-chip">มูลค่าสั่งซื้อ ${escapeHtml(formatMoney(item.reorderValue))}</span>
+              <span class="purchase-chip">${escapeHtml(item.badgeText || "ควรสั่งซื้อ")}</span>
+            </div>
           </div>
-          <div class="task-value ${item.tone}">${escapeHtml(formatQtyCompact(item.value))}</div>
-        </div>
-      `).join("");
-    }
-
-    function renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows }) {
-      const el = document.getElementById("managerRecommendationList");
-      if (!el) return;
-      const topWarning = warningItems.slice().sort((a, b) => Number(b.stock_value || 0) - Number(a.stock_value || 0))[0];
-      const rows = [
-        {
-          icon: "◎",
-          tone: "tone-blue",
-          title: "เร่งระบายสินค้าใกล้หมดอายุ",
-          sub: `มีสินค้า ${formatQtyCompact(warningItems.length)} รายการ ใกล้หมดอายุภายใน 60 วัน แนะนำจัดโปรโมชันหรือกระจายไปยังสาขา`
-        },
-        {
-          icon: "▣",
-          tone: "tone-green",
-          title: "วางแผนการสั่งซื้อ",
-          sub: `ติดตามแนวโน้มสินค้าใกล้หมดอายุ และตรวจรายการควรเติมสต็อก ${formatQtyCompact(reorderRows.length)} รายการ`
-        },
-        {
-          icon: "◕",
-          tone: "tone-red",
-          title: "โฟกัสสินค้าความเสี่ยงสูง",
-          sub: topWarning
-            ? `${topWarning.product_display_name} เป็นสินค้ามูลค่าเสี่ยงที่ควรจัดการก่อน`
-            : `มีสินค้าหมดอายุแล้ว ${formatQtyCompact(expiredItems.length)} รายการ และสินค้าชำรุด ${formatQtyCompact(damageItems.length)} รายการ`
-        },
-        {
-          icon: "□",
-          tone: "tone-purple",
-          title: "ตรวจสอบสต็อกสม่ำเสมอ",
-          sub: "ตรวจสอบล็อตทุกสัปดาห์ เพื่อลดความเสี่ยงและลดการสูญเสีย"
-        }
-      ];
-
-      el.innerHTML = rows.map(item => `
-        <div class="recommendation-row">
-          <div class="recommendation-icon ${item.tone}">${escapeHtml(item.icon)}</div>
-          <div>
-            <div class="recommendation-title">${escapeHtml(item.title)}</div>
-            <div class="recommendation-sub">${escapeHtml(item.sub)}</div>
+          <div class="purchase-qty">
+            ${escapeHtml(formatQtyCompact(item.recommendedQty))}
+            <span>แนะนำให้สั่ง</span>
           </div>
         </div>
       `).join("");
@@ -6096,8 +6140,7 @@
         handledCount
       });
       renderFefoStatus(fefoBuckets);
-      renderActionTasks({ warningItems, expiredItems, damageItems, handledCount });
-      renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows });
+      renderPurchaseRecommendations(reorderRows);
       setTextWithTitle("trendTotalChip", `สต๊อกมีอยู่ ${formatQtyCompact(activeBatchCount)} ล็อต`);
       setTextWithTitle("trendNearChip", `ใกล้หมดอายุ ${formatQtyCompact(warningItems.length)}`);
       setTextWithTitle("trendExpiredChip", `หมดอายุ ${formatQtyCompact(expiredItems.length)}`);
