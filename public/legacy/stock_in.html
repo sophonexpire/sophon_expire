@@ -650,7 +650,7 @@
           </form>
 
           <div id="readonlyNote" class="readonly-note hidden">
-            บัญชี MANAGER จะลบข้อมูลได้ แต่ไม่สามารถเพิ่มหรือแก้ไขล็อตสินค้าได้
+            บัญชีที่เข้าสู่ระบบสามารถเพิ่ม แก้ไข และลบล็อตสินค้าได้
           </div>
         </div>
       </div>
@@ -775,7 +775,7 @@
     }
 
     function canDelete() {
-      return state.currentUser && state.currentUser.role === "manager";
+      return canAddEdit();
     }
 
     function getRoleText(role) {
@@ -1440,9 +1440,7 @@
           ? `<button type="button" class="btn-danger" onclick="deleteBatch(${item.id})">ลบ</button>`
           : "";
 
-        const managerNote = !canAddEdit() && canDelete()
-          ? `<div class="sub-mini-text" style="color:#9ca3af;">ลบได้ แต่เพิ่ม/แก้ไขไม่ได้</div>`
-          : "";
+        const managerNote = "";
 
         const visibleNote = cleanNoteText(item.note).userNote;
 
@@ -1643,7 +1641,7 @@
 
     async function deleteBatch(id) {
       if (!canDelete()) {
-        showMessage("เฉพาะ MANAGER เท่านั้นที่ลบล็อตสินค้าได้", "error");
+        showMessage("บัญชีนี้ไม่มีสิทธิ์ลบล็อตสินค้า", "error");
         return;
       }
 
@@ -1654,6 +1652,13 @@
 
       try {
         clearMessage();
+
+        const movementDelete = await supabaseClient
+          .from("stock_movements")
+          .delete()
+          .eq("batch_id", id);
+
+        if (movementDelete.error) throw movementDelete.error;
 
         const { error } = await supabaseClient
           .from("batches")
