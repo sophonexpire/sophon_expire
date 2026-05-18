@@ -72,7 +72,7 @@ assert.match(productsHtml, /id="barcode"/, "product form should include a separa
 assert.match(productsHtml, /parseProductPrice\(\$\("price"\)\.value\)/, "submit handler should validate price");
 assert.match(productsHtml, /price:\s*priceResult\.price/, "payload should include price");
 assert.match(productsHtml, /const barcode = \$\("barcode"\)\.value\.trim\(\)/, "submit handler should read barcode separately");
-assert.match(productsHtml, /barcode:\s*barcode \|\| null/, "payload should save barcode separately");
+assert.match(productsHtml, /saveProductBarcode\(result\.data\.id, barcode\)/, "edit flow should save barcode with a dedicated update");
 assert.match(productsHtml, /verifyProductBarcodeSaved\(result\.data\.id, barcode\)/, "product save should verify barcode persisted");
 assert.match(productsHtml, /บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล/, "barcode mismatch should show a clear error");
 assert.doesNotMatch(productsHtml, /existingBarcode === nextCode/, "barcode should not be compared against product code");

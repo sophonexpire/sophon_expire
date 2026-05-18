@@ -32,6 +32,19 @@ grant select, insert, update, delete on public.batches to anon, authenticated;
 grant select, insert, update, delete on public.stock_movements to anon, authenticated;
 grant usage, select on all sequences in schema public to anon, authenticated;
 
+-- Barcode and product_code are different fields. If an old trigger/function in
+-- the database forces barcode to match product_code, remove or fix that trigger.
+-- Run this diagnostic query if barcode edits still revert:
+-- select trigger_name, event_manipulation, action_statement
+-- from information_schema.triggers
+-- where event_object_schema = 'public'
+--   and event_object_table = 'products'
+-- order by trigger_name;
+--
+-- The normal timestamp trigger is OK:
+--   trg_products_updated_at -> execute function set_updated_at()
+-- Any trigger/function that assigns NEW.barcode := NEW.product_code should be dropped or changed.
+
 delete from public.products
 where product_code = '020020300'
    or barcode = '020020300';
