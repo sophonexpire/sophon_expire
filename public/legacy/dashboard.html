@@ -3396,6 +3396,547 @@
         display: grid !important;
       }
     }
+
+    .dashboard-intro.workflow-guide {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: clamp(28px, 3vw, 42px) !important;
+      margin-top: 0 !important;
+      padding: clamp(30px, 4.5vw, 56px) !important;
+      border: 1px solid #d7e4f4 !important;
+      border-radius: 28px !important;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(20, 184, 166, 0.09), transparent 26%),
+        radial-gradient(circle at 88% 10%, rgba(139, 92, 246, 0.08), transparent 22%),
+        linear-gradient(180deg, #ffffff 0%, #fbfdff 100%) !important;
+      box-shadow: 0 30px 70px rgba(15, 23, 42, 0.08) !important;
+    }
+
+    .workflow-guide .workflow-hero {
+      min-width: 0;
+    }
+
+    .workflow-guide .workflow-kicker {
+      min-height: 44px;
+      padding: 0 20px;
+      margin-bottom: clamp(24px, 3vw, 34px);
+      border-radius: 999px;
+      border-color: #bfebdc;
+      background: linear-gradient(180deg, #f1fdf8 0%, #ecfdf5 100%);
+      color: #047857;
+      font-size: 15px;
+      letter-spacing: 0;
+      text-transform: none;
+      box-shadow: 0 14px 28px rgba(16, 185, 129, 0.12);
+    }
+
+    .workflow-guide .dashboard-intro-title {
+      max-width: 1120px;
+      margin-bottom: 18px;
+      font-size: clamp(34px, 4.8vw, 58px);
+      font-weight: 900;
+      line-height: 1.16;
+      letter-spacing: 0;
+      color: #07132b;
+    }
+
+    .workflow-guide .dashboard-intro-sub {
+      max-width: 960px;
+      font-size: clamp(17px, 1.6vw, 22px);
+      line-height: 1.8;
+      color: #56657a;
+    }
+
+    .workflow-guide .workflow-points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: clamp(18px, 2vw, 28px);
+      margin-top: clamp(34px, 4vw, 54px);
+    }
+
+    .workflow-guide .workflow-point {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 20px;
+      min-height: 168px;
+      padding: clamp(22px, 2.3vw, 30px);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.78);
+      border: 1px solid #dce8f6;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .workflow-guide .workflow-point.tone-green {
+      background: linear-gradient(135deg, rgba(236, 253, 245, 0.82), rgba(255, 255, 255, 0.92));
+      border-color: #bdebdc;
+    }
+
+    .workflow-guide .workflow-point.tone-blue {
+      background: linear-gradient(135deg, rgba(239, 246, 255, 0.86), rgba(255, 255, 255, 0.94));
+      border-color: #bfdbfe;
+    }
+
+    .workflow-guide .workflow-point.tone-purple {
+      background: linear-gradient(135deg, rgba(250, 245, 255, 0.86), rgba(255, 255, 255, 0.94));
+      border-color: #ddd6fe;
+    }
+
+    .workflow-guide .workflow-point-icon {
+      width: 66px;
+      height: 66px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid currentColor;
+      font-size: 28px;
+      font-weight: 900;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.07);
+    }
+
+    .workflow-guide .tone-green .workflow-point-icon,
+    .workflow-guide .tone-green .intro-point-label {
+      color: #059669;
+    }
+
+    .workflow-guide .tone-blue .workflow-point-icon,
+    .workflow-guide .tone-blue .intro-point-label {
+      color: #2563eb;
+    }
+
+    .workflow-guide .tone-purple .workflow-point-icon,
+    .workflow-guide .tone-purple .intro-point-label {
+      color: #7c3aed;
+    }
+
+    .workflow-guide .intro-point-label {
+      margin-bottom: 10px;
+      font-size: clamp(18px, 1.45vw, 22px);
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .workflow-guide .intro-point-text {
+      font-size: clamp(15px, 1.15vw, 17px);
+      line-height: 1.85;
+      color: #334155;
+    }
+
+    .workflow-guide .workflow-main-panel,
+    .workflow-guide .workflow-steps-panel {
+      min-width: 0;
+    }
+
+    .workflow-guide .workflow-steps-panel {
+      padding: clamp(24px, 3vw, 36px);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid #cfe1f5;
+      box-shadow: none;
+    }
+
+    .workflow-guide .workflow-panel-head {
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+
+    .workflow-guide .intro-panel-title {
+      margin: 0;
+      font-size: clamp(22px, 1.9vw, 28px);
+      line-height: 1.35;
+      color: #0f172a;
+    }
+
+    .workflow-guide .workflow-panel-sub {
+      margin-top: 8px;
+      font-size: clamp(15px, 1.2vw, 18px);
+      line-height: 1.65;
+      color: #64748b;
+    }
+
+    .workflow-guide .intro-panel-actions {
+      gap: 14px;
+    }
+
+    .workflow-guide .intro-pill {
+      min-height: 46px;
+      height: auto;
+      padding: 0 20px;
+      border-radius: 12px;
+      font-size: 16px;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .workflow-guide .intro-pill.tone-green {
+      background: #f0fdf4;
+      border-color: #bdebdc;
+      color: #047857;
+    }
+
+    .workflow-guide .intro-pill.tone-purple {
+      background: #faf5ff;
+      border-color: #ddd6fe;
+      color: #7c3aed;
+    }
+
+    .workflow-guide .intro-pill.tone-blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+
+    .workflow-guide .workflow-checklist {
+      gap: 18px;
+    }
+
+    .workflow-guide .workflow-step {
+      display: grid;
+      grid-template-columns: 46px 78px minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      min-height: 122px;
+      padding: 22px 26px;
+      border-radius: 18px;
+      border: 1px solid #dbe6f4;
+      background: #ffffff;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.035);
+    }
+
+    .workflow-guide .intro-check-number {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 18px;
+      font-weight: 900;
+      background: #eafaf4;
+      color: #047857;
+    }
+
+    .workflow-guide .workflow-step-icon {
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 900;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #bdebdc;
+    }
+
+    .workflow-guide .workflow-step.tone-blue .intro-check-number,
+    .workflow-guide .workflow-step.tone-blue .workflow-step-icon {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+
+    .workflow-guide .workflow-step.tone-purple .intro-check-number,
+    .workflow-guide .workflow-step.tone-purple .workflow-step-icon {
+      background: #faf5ff;
+      border-color: #ddd6fe;
+      color: #7c3aed;
+    }
+
+    .workflow-guide .workflow-step.tone-orange .intro-check-number,
+    .workflow-guide .workflow-step.tone-orange .workflow-step-icon {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #f97316;
+    }
+
+    .workflow-guide .intro-check strong {
+      margin-bottom: 8px;
+      font-size: clamp(18px, 1.35vw, 22px);
+      line-height: 1.4;
+      color: #172033;
+    }
+
+    .workflow-guide .intro-check span {
+      font-size: clamp(15px, 1.1vw, 17px);
+      line-height: 1.75;
+      color: #526176;
+    }
+
+    .workflow-guide .workflow-step-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 999px;
+      background: #f0fdf4;
+      color: #047857;
+      border: 1px solid #bdebdc;
+      font-size: 16px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .workflow-guide .workflow-step.tone-blue .workflow-step-action {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+
+    .workflow-guide .workflow-step.tone-purple .workflow-step-action {
+      background: #faf5ff;
+      border-color: #ddd6fe;
+      color: #7c3aed;
+    }
+
+    .workflow-guide .workflow-step.tone-orange .workflow-step-action {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #f97316;
+    }
+
+    .workflow-guide .intro-pill:focus-visible,
+    .workflow-guide .workflow-step-action:focus-visible,
+    .workflow-guide .intro-inline-link:focus-visible {
+      outline: 3px solid rgba(37, 99, 235, 0.38);
+      outline-offset: 3px;
+    }
+
+    .workflow-guide .workflow-tips {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) minmax(220px, 340px);
+      gap: clamp(20px, 3vw, 38px);
+      align-items: center;
+      min-height: 190px;
+      padding: clamp(24px, 3vw, 34px);
+      border-radius: 22px;
+      border: 1px solid #d7e4f4;
+      background:
+        radial-gradient(circle at 86% 50%, rgba(59, 130, 246, 0.08), transparent 28%),
+        linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    .workflow-guide .workflow-tip-icon {
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef6ff;
+      color: #2563eb;
+      border: 18px solid #e6eef9;
+      font-size: 34px;
+      font-weight: 900;
+    }
+
+    .workflow-guide .workflow-tip-copy h3 {
+      margin: 0 0 12px;
+      font-size: clamp(22px, 1.8vw, 28px);
+      line-height: 1.35;
+      color: #172033;
+    }
+
+    .workflow-guide .workflow-tip-copy ul {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+      color: #475569;
+      font-size: clamp(15px, 1.1vw, 17px);
+      line-height: 1.65;
+    }
+
+    .workflow-guide .workflow-tip-copy li::before {
+      content: "✓";
+      display: inline-flex;
+      width: 24px;
+      height: 24px;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      border-radius: 50%;
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .workflow-guide .workflow-illustration {
+      position: relative;
+      min-height: 150px;
+    }
+
+    .workflow-guide .workflow-illustration .box {
+      position: absolute;
+      bottom: 20px;
+      width: 58px;
+      height: 50px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f6bf72, #e9a64b);
+      box-shadow: 0 12px 22px rgba(217, 119, 6, 0.18);
+    }
+
+    .workflow-guide .workflow-illustration .box.one {
+      right: 206px;
+      bottom: 12px;
+    }
+
+    .workflow-guide .workflow-illustration .box.two {
+      right: 158px;
+      bottom: 42px;
+    }
+
+    .workflow-guide .workflow-illustration .clipboard {
+      position: absolute;
+      right: 72px;
+      bottom: 8px;
+      width: 118px;
+      height: 144px;
+      border: 9px solid #3b82f6;
+      border-radius: 14px;
+      background: #f8fbff;
+      box-shadow: 0 18px 30px rgba(37, 99, 235, 0.16);
+    }
+
+    .workflow-guide .workflow-illustration .clipboard::before {
+      content: "";
+      position: absolute;
+      left: 34px;
+      top: -25px;
+      width: 44px;
+      height: 34px;
+      border-radius: 12px 12px 8px 8px;
+      background: #3b82f6;
+    }
+
+    .workflow-guide .workflow-illustration .clipboard i {
+      position: absolute;
+      left: 24px;
+      right: 18px;
+      height: 7px;
+      border-radius: 999px;
+      background: #dbeafe;
+    }
+
+    .workflow-guide .workflow-illustration .clipboard i:nth-child(1) {
+      top: 38px;
+    }
+
+    .workflow-guide .workflow-illustration .clipboard i:nth-child(2) {
+      top: 72px;
+    }
+
+    .workflow-guide .workflow-illustration .clipboard i:nth-child(3) {
+      top: 106px;
+    }
+
+    .workflow-guide .workflow-illustration .plant {
+      position: absolute;
+      right: 0;
+      bottom: 14px;
+      width: 42px;
+      height: 54px;
+      border-radius: 0 28px 0 28px;
+      background: #34d399;
+      transform: rotate(-22deg);
+      box-shadow: -20px 16px 0 -6px #10b981, 0 56px 0 -14px #2563eb;
+    }
+
+    @media (max-width: 1120px) {
+      .workflow-guide .workflow-points {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-guide .workflow-panel-head {
+        display: grid;
+      }
+
+      .workflow-guide .intro-panel-actions {
+        justify-content: flex-start;
+      }
+
+      .workflow-guide .workflow-step {
+        grid-template-columns: 42px 62px minmax(0, 1fr);
+      }
+
+      .workflow-guide .workflow-step-action {
+        grid-column: 3;
+        justify-self: start;
+        margin-top: 2px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .dashboard-intro.workflow-guide {
+        padding: 22px !important;
+        border-radius: 22px !important;
+      }
+
+      .workflow-guide .workflow-kicker {
+        min-height: 38px;
+        padding: 0 14px;
+        font-size: 13px;
+      }
+
+      .workflow-guide .dashboard-intro-title {
+        font-size: clamp(28px, 9vw, 38px);
+      }
+
+      .workflow-guide .dashboard-intro-sub,
+      .workflow-guide .intro-point-text,
+      .workflow-guide .intro-check span,
+      .workflow-guide .workflow-tip-copy ul {
+        font-size: 15px;
+      }
+
+      .workflow-guide .workflow-point {
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .workflow-guide .workflow-point-icon {
+        width: 58px;
+        height: 58px;
+      }
+
+      .workflow-guide .intro-panel-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-guide .intro-pill {
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .workflow-guide .workflow-step {
+        grid-template-columns: 38px minmax(0, 1fr);
+        padding: 18px;
+      }
+
+      .workflow-guide .workflow-step-icon {
+        display: none;
+      }
+
+      .workflow-guide .workflow-step-action {
+        grid-column: 2;
+        width: 100%;
+      }
+
+      .workflow-guide .workflow-tips {
+        grid-template-columns: 1fr;
+      }
+
+      .workflow-guide .workflow-illustration {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -3514,70 +4055,110 @@
         </div>
       </section>
 
-      <div class="dashboard-intro">
-        <div>
-          <div class="intro-kicker">เริ่มงานวันนี้</div>
+      <div class="dashboard-intro workflow-guide">
+        <div class="workflow-hero">
+          <div class="intro-kicker workflow-kicker">↯ เริ่มงานวันนี้</div>
           <div class="dashboard-intro-title">จัดการหมดอายุ และของเสียหาย ให้เป็นระบบ</div>
           <div class="dashboard-intro-sub">
-            Dashboard นี้จัดลำดับให้แล้ว: เช็กงานด่วน, บันทึกรายการ, ปิดงาน, และตรวจผลจากประวัติ
+            ภาพรวมการทำงานของคุณในที่เดียว จัดการง่าย ตรวจสอบไว ควบคุมได้ทุกขั้นตอน
           </div>
 
-          <div class="intro-points">
-            <div class="intro-point">
-              <div class="intro-point-label">1) เช็กเตือน</div>
-              <div class="intro-point-text">ดู “ใกล้หมดอายุ / หมดอายุ / ชำรุด” แล้วจัดลำดับงานก่อนหลัง</div>
+          <div class="intro-points workflow-points" aria-label="ภาพรวมขั้นตอนสำคัญ">
+            <div class="intro-point workflow-point tone-green">
+              <div class="workflow-point-icon" aria-hidden="true">✓</div>
+              <div>
+                <div class="intro-point-label">1. เช็กเตือน</div>
+                <div class="intro-point-text">ดูรายการใกล้หมดอายุ / หมดอายุ / ชำรุด และจัดลำดับความสำคัญก่อนลงมือจัดการ</div>
+              </div>
             </div>
-            <div class="intro-point">
-              <div class="intro-point-label">2) บันทึกและจัดการ</div>
-              <div class="intro-point-text">เพิ่มรายการให้ครบ (สินค้า, ล็อต, จำนวน) แล้วเลือกคืน supplier หรือทำลาย</div>
+            <div class="intro-point workflow-point tone-blue">
+              <div class="workflow-point-icon" aria-hidden="true">▤</div>
+              <div>
+                <div class="intro-point-label">2. บันทึกและจัดการ</div>
+                <div class="intro-point-text">บันทึกรายการให้ครบ ทั้งสินค้า ล็อต จำนวน แล้วเลือกคืน supplier หรือทำลาย</div>
+              </div>
             </div>
-            <div class="intro-point">
-              <div class="intro-point-label">3) ตรวจผล</div>
-              <div class="intro-point-text">เช็กประวัติคืน/ตัดออกให้ตรง และถ้าต้องรายงานดูหน้าวิเคราะห์</div>
+            <div class="intro-point workflow-point tone-purple">
+              <div class="workflow-point-icon" aria-hidden="true">◔</div>
+              <div>
+                <div class="intro-point-label">3. ตรวจผล</div>
+                <div class="intro-point-text">เช็กประวัติการจัดการและติดตามความคืบหน้าด้วยรายงานและตัวชี้วัดต่างๆ</div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="intro-side">
-          <div class="intro-panel">
-            <div class="intro-panel-head">
-              <div class="intro-panel-title">ขั้นตอนทำงาน (พนักงาน)</div>
+        <div class="intro-side workflow-main-panel">
+          <div class="intro-panel workflow-steps-panel">
+            <div class="intro-panel-head workflow-panel-head">
+              <div>
+                <div class="intro-panel-title">ขั้นตอนการทำงาน (หลัก 4 ขั้นตอน)</div>
+                <div class="workflow-panel-sub">ทำตามลำดับเพื่อจัดการได้อย่างครบถ้วน</div>
+              </div>
               <div class="intro-panel-actions">
-                <a class="intro-pill" href="expire_returns.html">บันทึกหมดอายุ/ชำรุด</a>
-                <a class="intro-pill" href="damaged_manage.html">แจ้งสินค้าเสียหาย</a>
-                <a class="intro-pill" href="expired_history.html">ดูประวัติ</a>
+                <a class="intro-pill tone-green" href="expire_returns.html">＋ บันทึกหมดอายุ/ชำรุด</a>
+                <a class="intro-pill tone-purple" href="damaged_manage.html">△ แจ้งสินค้าเสียหาย</a>
+                <a class="intro-pill tone-blue" href="expired_history.html">↺ ดูประวัติ</a>
               </div>
             </div>
-            <div class="intro-checklist">
-              <div class="intro-check">
+            <div class="intro-checklist workflow-checklist">
+              <div class="intro-check workflow-step tone-green">
                 <div class="intro-check-number">1</div>
+                <div class="workflow-step-icon" aria-hidden="true">▣</div>
                 <div>
                   <strong>เช็กเตือนบน Dashboard</strong>
                   <span>ดูจำนวน “ใกล้หมดอายุ / หมดอายุ / ชำรุด” เพื่อจัดลำดับงานก่อนหลัง</span>
                 </div>
+                <a class="workflow-step-action" href="dashboard.html">เริ่มต้นที่นี่ ›</a>
               </div>
-              <div class="intro-check">
+              <div class="intro-check workflow-step tone-blue">
                 <div class="intro-check-number">2</div>
+                <div class="workflow-step-icon" aria-hidden="true">▤</div>
                 <div>
                   <strong>บันทึกรายการหมดอายุ/ชำรุด</strong>
                   <span>ไปที่หน้า <a class="intro-inline-link" href="expire_returns.html">หมดอายุ / ชำรุด</a> แล้วเพิ่มสินค้า, ล็อต, จำนวน ให้ครบ</span>
                 </div>
+                <a class="workflow-step-action" href="expire_returns.html">ไปยังหน้า ›</a>
               </div>
-              <div class="intro-check">
+              <div class="intro-check workflow-step tone-purple">
                 <div class="intro-check-number">3</div>
+                <div class="workflow-step-icon" aria-hidden="true">▰</div>
                 <div>
                   <strong>จัดการและปิดงาน</strong>
                   <span>เลือก “คืน supplier” หรือ “ทำลาย” และถ้ามีของเสียหายให้แจ้งที่หน้า <a class="intro-inline-link" href="damaged_manage.html">สินค้าเสียหาย</a></span>
                 </div>
+                <a class="workflow-step-action" href="damaged_manage.html">ไปยังหน้า ›</a>
               </div>
-              <div class="intro-check">
+              <div class="intro-check workflow-step tone-orange">
                 <div class="intro-check-number">4</div>
+                <div class="workflow-step-icon" aria-hidden="true">▥</div>
                 <div>
                   <strong>ตรวจสอบผล</strong>
                   <span>เช็กที่หน้า <a class="intro-inline-link" href="expired_history.html">ประวัติคืน / ตัดออก</a> ว่างานถูกบันทึกเรียบร้อย (ถ้าต้องรายงาน เปิดหน้า <a class="intro-inline-link" href="analysis_expire_damage.html">วิเคราะห์</a>)</span>
                 </div>
+                <a class="workflow-step-action" href="expired_history.html">ไปยังหน้า ›</a>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="workflow-tips">
+          <div class="workflow-tip-icon" aria-hidden="true">○</div>
+          <div class="workflow-tip-copy">
+            <h3>เคล็ดลับการใช้งาน</h3>
+            <ul>
+              <li>บันทึกรายการให้ครบถ้วน เพื่อให้ข้อมูลถูกต้องแม่นยำ</li>
+              <li>จัดการทันทีเมื่อได้รับการแจ้งเตือน ช่วยลดความสูญเสีย</li>
+              <li>ตรวจสอบรายงานสม่ำเสมอ เพื่อการวางแผนที่แม่นยำ</li>
+            </ul>
+          </div>
+          <div class="workflow-illustration" aria-hidden="true">
+            <span class="box one"></span>
+            <span class="box two"></span>
+            <span class="clipboard">
+              <i></i><i></i><i></i>
+            </span>
+            <span class="plant"></span>
           </div>
         </div>
       </div>
