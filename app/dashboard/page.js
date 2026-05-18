@@ -1,5 +1,5 @@
 import LegacyFrame from "@/components/LegacyFrame";
 
 export default function DashboardPage() {
-  return <LegacyFrame src="/legacy/dashboard.html?v=reorder-filters-weekly-expire-progress-20260518" title="Dashboard" />;
+  return <LegacyFrame src="/legacy/dashboard.html?v=expire-progress-week-month-20260518" title="Dashboard" />;
 }

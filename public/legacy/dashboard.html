@@ -4081,6 +4081,38 @@
       text-align: center;
     }
 
+    .range-tabs button {
+      min-width: 88px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #64748b;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .range-tabs button:hover,
+    .range-tabs button:focus-visible {
+      outline: none;
+      background: #eff6ff;
+      color: #1d4ed8;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+    }
+
+    .range-tabs button.active {
+      background: #eaf2ff;
+      color: #2563eb;
+    }
+
+    .progress-summary-tabs {
+      margin-top: 8px;
+      box-shadow: none;
+    }
+
     .database-tabs {
       flex-wrap: wrap;
       justify-content: flex-end;
@@ -5078,13 +5110,19 @@
         <article class="intel-card">
           <div class="intel-card-head">
             <div>
-              <h3>ความคืบหน้าการจัดการสินค้าหมดอายุรายสัปดาห์</h3>
+              <h3 id="expireProgressChartTitle">ความคืบหน้าการจัดการสินค้าหมดอายุรายสัปดาห์</h3>
               <p id="weeklyExpireProgressText">เทียบจำนวนล็อตที่หมดอายุกับล็อตที่คืน supplier หรือทำลายแล้ว</p>
             </div>
-            <div class="range-tabs database-tabs" aria-label="สรุปความคืบหน้ารายสัปดาห์">
-              <span id="weeklyExpiredTotalChip">หมดอายุ 0</span>
-              <span id="weeklyHandledTotalChip" class="active">จัดการแล้ว 0</span>
-              <span id="weeklyOpenTotalChip">ค้างจัดการ 0</span>
+            <div>
+              <div class="range-tabs database-tabs" aria-label="เลือกระยะเวลาความคืบหน้า">
+                <button type="button" class="period-tab active" data-expire-progress-period="week" aria-pressed="true">รายสัปดาห์</button>
+                <button type="button" class="period-tab" data-expire-progress-period="month" aria-pressed="false">รายเดือน</button>
+              </div>
+              <div class="range-tabs database-tabs progress-summary-tabs" aria-label="สรุปความคืบหน้า">
+                <span id="weeklyExpiredTotalChip">หมดอายุ 0</span>
+                <span id="weeklyHandledTotalChip" class="active">จัดการแล้ว 0</span>
+                <span id="weeklyOpenTotalChip">ค้างจัดการ 0</span>
+              </div>
             </div>
           </div>
           <div class="chart-wrap intel-chart">
@@ -5213,7 +5251,9 @@
     const dashboardState = {
       coverageDays: 14,
       reorderRows: [],
-      purchaseFilter: "all"
+      purchaseFilter: "all",
+      expireProgressPeriod: "week",
+      expireProgressBatches: []
     };
     const DASHBOARD_FETCH_PAGE_SIZE = 1000;
 
@@ -5568,28 +5608,61 @@
       return d;
     }
 
-    function buildWeeklyExpireProgress(batches) {
+    function startOfMonth(dateValue) {
+      const d = new Date(dateValue);
+      if (Number.isNaN(d.getTime())) return null;
+      d.setHours(0, 0, 0, 0);
+      d.setDate(1);
+      return d;
+    }
+
+    function formatMonthLabel(dateValue) {
+      if (!dateValue) return "-";
+      const d = new Date(dateValue);
+      if (Number.isNaN(d.getTime())) return "-";
+      return d.toLocaleDateString("th-TH", { month: "short", year: "2-digit" });
+    }
+
+    function buildExpireProgressPeriods(period) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const thisWeekStart = startOfWeek(today);
-      const weeks = [];
+      const isMonth = period === "month";
+      const periods = [];
+      const currentStart = isMonth ? startOfMonth(today) : startOfWeek(today);
+      const periodCount = isMonth ? 6 : 8;
 
-      for (let index = 7; index >= 0; index -= 1) {
-        const weekStart = new Date(thisWeekStart);
-        weekStart.setDate(thisWeekStart.getDate() - (index * 7));
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        weeks.push({
-          key: toDateKey(weekStart),
-          start: weekStart,
-          end: weekEnd,
-          label: `${formatShortDate(weekStart)}-${formatShortDate(weekEnd)}`,
+      for (let index = periodCount - 1; index >= 0; index -= 1) {
+        const start = new Date(currentStart);
+        if (isMonth) start.setMonth(currentStart.getMonth() - index);
+        else start.setDate(currentStart.getDate() - (index * 7));
+
+        const end = new Date(start);
+        if (isMonth) {
+          end.setMonth(start.getMonth() + 1);
+          end.setDate(0);
+        } else {
+          end.setDate(start.getDate() + 6);
+        }
+
+        periods.push({
+          key: toDateKey(start),
+          start,
+          end,
+          label: isMonth ? formatMonthLabel(start) : `${formatShortDate(start)}-${formatShortDate(end)}`,
           expired: 0,
           handled: 0
         });
       }
 
-      const weekMap = new Map(weeks.map(week => [week.key, week]));
+      return periods;
+    }
+
+    function buildExpireProgressData(batches, period = "week") {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isMonth = period === "month";
+      const periods = buildExpireProgressPeriods(period);
+      const periodMap = new Map(periods.map(item => [item.key, item]));
       let totalExpired = 0;
       let totalHandled = 0;
 
@@ -5598,10 +5671,10 @@
         if (Number.isNaN(expiry.getTime()) || expiry > today) return;
         totalExpired += 1;
 
-        const expiryWeek = startOfWeek(expiry);
-        const expiryWeekKey = expiryWeek ? toDateKey(expiryWeek) : "";
-        if (weekMap.has(expiryWeekKey)) {
-          weekMap.get(expiryWeekKey).expired += 1;
+        const expiryPeriod = isMonth ? startOfMonth(expiry) : startOfWeek(expiry);
+        const expiryPeriodKey = expiryPeriod ? toDateKey(expiryPeriod) : "";
+        if (periodMap.has(expiryPeriodKey)) {
+          periodMap.get(expiryPeriodKey).expired += 1;
         }
 
         const isHandled = item.displayStatus === "returned" || item.displayStatus === "disposed";
@@ -5610,26 +5683,28 @@
         if (!isHandled || !handledAt || Number.isNaN(handledAt.getTime())) return;
 
         totalHandled += 1;
-        const handledWeek = startOfWeek(handledAt);
-        const handledWeekKey = handledWeek ? toDateKey(handledWeek) : "";
-        if (weekMap.has(handledWeekKey)) {
-          weekMap.get(handledWeekKey).handled += 1;
+        const handledPeriod = isMonth ? startOfMonth(handledAt) : startOfWeek(handledAt);
+        const handledPeriodKey = handledPeriod ? toDateKey(handledPeriod) : "";
+        if (periodMap.has(handledPeriodKey)) {
+          periodMap.get(handledPeriodKey).handled += 1;
         }
       });
 
-      let cumulativeExpired = Math.max(0, totalExpired - weeks.reduce((sum, week) => sum + week.expired, 0));
-      let cumulativeHandled = Math.max(0, totalHandled - weeks.reduce((sum, week) => sum + week.handled, 0));
-      const progressData = weeks.map(week => {
-        cumulativeExpired += week.expired;
-        cumulativeHandled += week.handled;
+      let cumulativeExpired = Math.max(0, totalExpired - periods.reduce((sum, item) => sum + item.expired, 0));
+      let cumulativeHandled = Math.max(0, totalHandled - periods.reduce((sum, item) => sum + item.handled, 0));
+      const progressData = periods.map(item => {
+        cumulativeExpired += item.expired;
+        cumulativeHandled += item.handled;
         if (cumulativeExpired <= 0) return 0;
         return Math.min(100, Math.round((cumulativeHandled / cumulativeExpired) * 100));
       });
 
       return {
-        labels: weeks.map(week => week.label),
-        expiredData: weeks.map(week => week.expired),
-        handledData: weeks.map(week => week.handled),
+        period,
+        labelText: isMonth ? "รายเดือน" : "รายสัปดาห์",
+        labels: periods.map(item => item.label),
+        expiredData: periods.map(item => item.expired),
+        handledData: periods.map(item => item.handled),
         progressData,
         totalExpired,
         totalHandled,
@@ -5928,12 +6003,20 @@
       const canvas = document.getElementById("weeklyExpireProgressChart");
       if (!canvas) return;
 
+      const period = data.period || "week";
+      const labelText = data.labelText || (period === "month" ? "รายเดือน" : "รายสัปดาห์");
+      document.querySelectorAll("[data-expire-progress-period]").forEach(button => {
+        const isActive = button.dataset.expireProgressPeriod === period;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+      setTextWithTitle("expireProgressChartTitle", `ความคืบหน้าการจัดการสินค้าหมดอายุ${labelText}`);
       setTextWithTitle("weeklyExpiredTotalChip", `หมดอายุ ${formatQtyCompact(data.totalExpired || 0)}`);
       setTextWithTitle("weeklyHandledTotalChip", `จัดการแล้ว ${formatQtyCompact(data.totalHandled || 0)}`);
       setTextWithTitle("weeklyOpenTotalChip", `ค้างจัดการ ${formatQtyCompact(data.openTotal || 0)}`);
       setTextWithTitle(
         "weeklyExpireProgressText",
-        `จัดการแล้ว ${formatQtyCompact(data.totalHandled || 0)} จาก ${formatQtyCompact(data.totalExpired || 0)} ล็อตที่หมดอายุ`
+        `มุมมอง${labelText}: จัดการแล้ว ${formatQtyCompact(data.totalHandled || 0)} จาก ${formatQtyCompact(data.totalExpired || 0)} ล็อตที่หมดอายุ`
       );
 
       dashboardCharts.weeklyExpireProgress = new Chart(canvas, {
@@ -6918,7 +7001,7 @@
         const urgentProductGroups = buildUrgentProductGroups(urgentExpireItems);
         const issueRanking = buildIssueRanking(urgentExpireItems, activeDamageItems);
         const expiryTrend = buildExpiryTrend(urgentExpireItems);
-        const weeklyExpireProgress = buildWeeklyExpireProgress(batches);
+        const weeklyExpireProgress = buildExpireProgressData(batches, dashboardState.expireProgressPeriod);
         const reorderRows = buildReorderRows(products, batches, uploadsRaw || [], salesLines);
         const salesTrend = buildSalesTrendData(uploadsRaw || [], salesLines);
         const topSalesProducts = buildTopSalesProducts(products, uploadsRaw || [], salesLines);
@@ -6926,6 +7009,7 @@
         const sales30Metrics = buildSalesMetrics(products, batches, uploadsRaw || [], salesLines);
         const avgDailySalesAll = sales30Metrics.reduce((sum, item) => sum + Number(item.avgDailySales || 0), 0);
         dashboardState.reorderRows = reorderRows;
+        dashboardState.expireProgressBatches = batches;
 
         setTextWithTitle("totalStockQty", formatQtyCompact(totalStockQty));
         setTextWithTitle("totalBatches", batches.length);
@@ -7049,6 +7133,14 @@
         button.addEventListener("click", function () {
           dashboardState.purchaseFilter = this.dataset.purchaseFilter || "all";
           renderPurchaseRecommendations(dashboardState.reorderRows);
+        });
+      });
+      document.querySelectorAll("[data-expire-progress-period]").forEach(button => {
+        button.addEventListener("click", function () {
+          dashboardState.expireProgressPeriod = this.dataset.expireProgressPeriod || "week";
+          renderWeeklyExpireProgressChart(
+            buildExpireProgressData(dashboardState.expireProgressBatches, dashboardState.expireProgressPeriod)
+          );
         });
       });
       loadDashboard();
