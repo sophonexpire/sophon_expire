@@ -548,6 +548,10 @@ export default function DashboardClient() {
     router.push("/login");
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return (
     <div className="dashboard-layout">
       <Sidebar />
@@ -558,11 +562,12 @@ export default function DashboardClient() {
               <h1>แดชบอร์ด</h1>
               <p>ดูงานสำคัญวันนี้ในหน้าเดียว เริ่มจากงานด่วน แล้วค่อยดูข้อมูลสรุปและแผนสต๊อก</p>
             </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "stretch" }}>
+            <div className="dashboard-actions">
               <div className="summary-box">
                 <div className="summary-box-label">ผู้ใช้งานปัจจุบัน</div>
                 <div className="summary-box-value">{state.user ? `${state.user.username} (${state.user.role || "user"})` : "-"}</div>
               </div>
+              <button className="secondary-button print-button" type="button" onClick={handlePrint} aria-label="พิมพ์รายงานแดชบอร์ด">พิมพ์รายงาน</button>
               <button className="secondary-button" type="button" onClick={() => loadDashboard(state.user, state.coverageDays)}>รีเฟรชข้อมูล</button>
               <button className="sidebar-logout" type="button" onClick={handleLogout}>ออกจากระบบ</button>
             </div>

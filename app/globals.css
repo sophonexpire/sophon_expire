@@ -1751,6 +1751,25 @@ button {
   min-width: 190px;
 }
 
+.dashboard-layout .dashboard-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.dashboard-layout .print-button {
+  background: #eef6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.dashboard-layout .print-button:hover,
+.dashboard-layout .print-button:focus-visible {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
 .dashboard-layout .inventory-flow-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1912,6 +1931,150 @@ button {
 
   .dashboard-layout .flow-metric {
     min-height: auto;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html,
+  body {
+    width: 100%;
+    min-height: auto;
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .dashboard-layout {
+    display: block !important;
+    padding: 0 !important;
+    max-width: none !important;
+    min-height: auto !important;
+  }
+
+  .dashboard-layout .sidebar,
+  .dashboard-layout .dashboard-actions button,
+  .dashboard-layout .hero,
+  .dashboard-layout .actions-grid,
+  .dashboard-layout .chart-card,
+  .dashboard-layout select,
+  .dashboard-layout label[for="coverageDays"] {
+    display: none !important;
+  }
+
+  .dashboard-layout .page-shell {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .dashboard-layout .page-stack {
+    gap: 14px !important;
+  }
+
+  .dashboard-layout .page-topbar,
+  .dashboard-layout .section-head,
+  .dashboard-layout .flow-panel-head {
+    display: block !important;
+  }
+
+  .dashboard-layout .page-title h1 {
+    font-size: 24pt !important;
+    margin-bottom: 4px !important;
+  }
+
+  .dashboard-layout .page-title p,
+  .dashboard-layout .section-head p,
+  .dashboard-layout .card-help,
+  .dashboard-layout .stat-help,
+  .dashboard-layout .sales-help,
+  .dashboard-layout .flow-help {
+    display: block !important;
+    color: #334155 !important;
+  }
+
+  .dashboard-layout .summary-box {
+    display: inline-block !important;
+    min-width: 0 !important;
+    margin-top: 8px !important;
+    padding: 8px 10px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+  }
+
+  .dashboard-layout .overview-grid,
+  .dashboard-layout .alerts-grid,
+  .dashboard-layout .content-grid,
+  .dashboard-layout .charts-grid,
+  .dashboard-layout .sales-grid,
+  .dashboard-layout .inventory-flow-grid,
+  .dashboard-layout .flow-metric-grid,
+  .dashboard-layout .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .dashboard-layout .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard-layout .flow-metric-grid,
+  .dashboard-layout .sales-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .dashboard-layout section,
+  .dashboard-layout .card,
+  .dashboard-layout .stat-card,
+  .dashboard-layout .sales-card,
+  .dashboard-layout .flow-panel,
+  .dashboard-layout .flow-metric,
+  .dashboard-layout .alert-card,
+  .dashboard-layout .focus-row,
+  .dashboard-layout .mini-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-color: #cbd5e1 !important;
+    background: #ffffff !important;
+  }
+
+  .dashboard-layout .stat-card,
+  .dashboard-layout .sales-card,
+  .dashboard-layout .flow-panel,
+  .dashboard-layout .card {
+    padding: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .dashboard-layout .flow-metric {
+    min-height: auto !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .dashboard-layout .stat-card::after {
+    display: none !important;
+  }
+
+  .dashboard-layout .stat-value,
+  .dashboard-layout .sales-value,
+  .dashboard-layout .flow-value,
+  .dashboard-layout .alert-value,
+  .dashboard-layout .focus-value {
+    font-size: 20pt !important;
+    color: #0f172a !important;
+  }
+
+  .dashboard-layout a {
+    color: #0f172a !important;
+    text-decoration: none !important;
   }
 }
 
