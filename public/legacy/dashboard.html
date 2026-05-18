@@ -5678,11 +5678,11 @@
         const avgDailySalesAll = sales30Metrics.reduce((sum, item) => sum + Number(item.avgDailySales || 0), 0);
         dashboardState.reorderRows = reorderRows;
 
-        document.getElementById("totalStockQty").textContent = formatQtyCompact(totalStockQty);
-        document.getElementById("totalBatches").textContent = batches.length;
-        document.getElementById("urgentCount").textContent = warningItems.length;
-        document.getElementById("expiredCount").textContent = expiredItems.length;
-        document.getElementById("damagedCount").textContent = activeDamageItems.length;
+        setTextWithTitle("totalStockQty", formatQtyCompact(totalStockQty));
+        setTextWithTitle("totalBatches", batches.length);
+        setTextWithTitle("urgentCount", warningItems.length);
+        setTextWithTitle("expiredCount", expiredItems.length);
+        setTextWithTitle("damagedCount", activeDamageItems.length);
 
         document.getElementById("focusUrgentTotal").textContent = urgentTotal;
         document.getElementById("focusDamageTotal").textContent = activeDamageItems.length;
