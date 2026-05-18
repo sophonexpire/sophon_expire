@@ -589,6 +589,26 @@
       return { ok: true, price: Math.round(price * 100) / 100 };
     }
 
+    function normalizeBarcodeForCompare(value) {
+      return String(value ?? "").trim();
+    }
+
+    async function verifyProductBarcodeSaved(productId, expectedBarcode) {
+      const { data, error } = await supabaseClient
+        .from("products")
+        .select("id, barcode")
+        .eq("id", productId)
+        .single();
+
+      if (error) throw error;
+
+      const savedBarcode = normalizeBarcodeForCompare(data?.barcode);
+      const targetBarcode = normalizeBarcodeForCompare(expectedBarcode);
+      if (savedBarcode !== targetBarcode) {
+        throw new Error(`บาร์โค้ดยังไม่ถูกเปลี่ยนในฐานข้อมูล (ต้องการ: ${targetBarcode || "-"}, ปัจจุบัน: ${savedBarcode || "-"})`);
+      }
+    }
+
     function formatCurrency(value) {
       const price = Number(value);
       if (!Number.isFinite(price)) return "-";
@@ -1036,6 +1056,7 @@
         }
 
         if (result.error) throw result.error;
+        await verifyProductBarcodeSaved(result.data.id, barcode);
 
         resetForm();
         showMessage("บันทึกข้อมูลเรียบร้อยแล้ว", "success");
