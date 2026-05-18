@@ -4964,11 +4964,11 @@
       document.getElementById("managerClosedWork").textContent = formatQtyCompact(handledQty);
       document.getElementById("managerDamagedQty").textContent = formatQtyCompact(damageQty);
 
-      setTextWithTitle("managerOpenValue", `มูลค่ารวม ${formatMoneyCompact(totalStockValue)}`, formatMoney(totalStockValue), `มูลค่าสินค้าคงเหลือทั้งหมด ${formatMoney(totalStockValue)}`);
-      setTextWithTitle("managerCriticalValue", `มูลค่ารวม ${formatMoneyCompact(warningValue)}`, formatMoney(warningValue), `มูลค่าสินค้าใกล้หมดอายุภายใน 2 เดือน ${formatMoney(warningValue)}`);
-      setTextWithTitle("managerReorderValue", `มูลค่ารวม ${formatMoneyCompact(expiredValue)}`, formatMoney(expiredValue), `มูลค่าสินค้าหมดอายุ ${formatMoney(expiredValue)}`);
-      setTextWithTitle("managerClosedValue", `มูลค่ารวม ${formatMoneyCompact(handledValue)}`, formatMoney(handledValue), `มูลค่าสินค้าที่ทำเรื่องคืนหรือจัดการแล้ว ${formatMoney(handledValue)}`);
-      setTextWithTitle("managerDamagedValue", `มูลค่ารวม ${formatMoneyCompact(damageValue)}`, formatMoney(damageValue), `มูลค่าสินค้าชำรุด ${formatMoney(damageValue)}`);
+      setTextWithTitle("managerOpenValue", `มูลค่ารวม ${formatMoney(totalStockValue)}`, formatMoney(totalStockValue), `มูลค่าสินค้าคงเหลือทั้งหมด ${formatMoney(totalStockValue)}`);
+      setTextWithTitle("managerCriticalValue", `มูลค่ารวม ${formatMoney(warningValue)}`, formatMoney(warningValue), `มูลค่าสินค้าใกล้หมดอายุภายใน 2 เดือน ${formatMoney(warningValue)}`);
+      setTextWithTitle("managerReorderValue", `มูลค่ารวม ${formatMoney(expiredValue)}`, formatMoney(expiredValue), `มูลค่าสินค้าหมดอายุ ${formatMoney(expiredValue)}`);
+      setTextWithTitle("managerClosedValue", `มูลค่ารวม ${formatMoney(handledValue)}`, formatMoney(handledValue), `มูลค่าสินค้าที่ทำเรื่องคืนหรือจัดการแล้ว ${formatMoney(handledValue)}`);
+      setTextWithTitle("managerDamagedValue", `มูลค่ารวม ${formatMoney(damageValue)}`, formatMoney(damageValue), `มูลค่าสินค้าชำรุด ${formatMoney(damageValue)}`);
 
       document.getElementById("managerUpdatedAt").textContent =
         `อัปเดตข้อมูลล่าสุดเมื่อ ${nowText} น. ข้อมูลอาจเปลี่ยนแปลงได้ตลอดเวลา`;
