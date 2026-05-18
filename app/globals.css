@@ -1770,6 +1770,243 @@ button {
   border-color: #93c5fd;
 }
 
+.dashboard-layout .inventory-status-card {
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid #dbe4f0;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 55px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-layout .inventory-status-card > div:nth-child(2) {
+  display: none;
+}
+
+.dashboard-layout .inventory-status-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: clamp(20px, 3vw, 28px);
+}
+
+.dashboard-layout .inventory-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dashboard-layout .inventory-title-row h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.2;
+}
+
+.dashboard-layout .inventory-title-row span {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.dashboard-layout .inventory-status-head p {
+  margin: 14px 0 0;
+  color: #475569;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.dashboard-layout .inventory-detail-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: #2563eb;
+  font-size: 16px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.dashboard-layout .inventory-detail-link::after {
+  content: "›";
+  margin-left: 10px;
+  font-size: 34px;
+  line-height: 1;
+}
+
+.dashboard-layout .inventory-status-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.dashboard-layout .inventory-status-grid .stat-card {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.dashboard-layout .inventory-status-grid .stat-card::after {
+  display: none;
+}
+
+.dashboard-layout .stat-card-head {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-layout .stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--blue);
+  box-shadow: 0 14px 24px rgba(37, 99, 235, 0.24);
+}
+
+.dashboard-layout .tone-blue .stat-icon { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.dashboard-layout .tone-orange .stat-icon { background: linear-gradient(135deg, #fb923c, #f97316); }
+.dashboard-layout .tone-red .stat-icon { background: linear-gradient(135deg, #f43f5e, #dc2626); }
+.dashboard-layout .tone-green .stat-icon { background: linear-gradient(135deg, #22c55e, #16a34a); }
+.dashboard-layout .tone-purple .stat-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+
+.dashboard-layout .inventory-status-grid .stat-label {
+  color: #0f172a;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.dashboard-layout .inventory-status-grid .stat-value {
+  margin-top: 34px;
+  color: #0f172a;
+  font-size: clamp(42px, 5vw, 64px);
+  line-height: 0.95;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-layout .stat-money {
+  margin-top: 18px;
+  color: #475569;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.dashboard-layout .stat-badge {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.dashboard-layout .stat-badge span {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.dashboard-layout .tone-orange .stat-badge { background: #fff7ed; color: #c2410c; }
+.dashboard-layout .tone-red .stat-badge { background: #fef2f2; color: #dc2626; }
+.dashboard-layout .tone-green .stat-badge { background: #ecfdf5; color: #047857; }
+.dashboard-layout .tone-purple .stat-badge { background: #f5f3ff; color: #6d28d9; }
+
+.dashboard-layout .inventory-status-grid .stat-help {
+  display: none;
+}
+
+.dashboard-layout .stat-spark {
+  height: 58px;
+  margin-top: 14px;
+  border-radius: 18px;
+  opacity: 0.9;
+  background:
+    linear-gradient(135deg, transparent 0 25%, rgba(37, 99, 235, 0.1) 25% 31%, transparent 31% 47%, rgba(37, 99, 235, 0.18) 47% 53%, transparent 53% 72%, rgba(37, 99, 235, 0.12) 72% 78%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(37, 99, 235, 0.08) 100%);
+}
+
+.dashboard-layout .tone-orange .stat-spark {
+  background:
+    linear-gradient(135deg, transparent 0 25%, rgba(249, 115, 22, 0.14) 25% 31%, transparent 31% 47%, rgba(249, 115, 22, 0.22) 47% 53%, transparent 53% 72%, rgba(249, 115, 22, 0.16) 72% 78%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(249, 115, 22, 0.08) 100%);
+}
+
+.dashboard-layout .tone-red .stat-spark {
+  background:
+    linear-gradient(135deg, transparent 0 25%, rgba(220, 38, 38, 0.14) 25% 31%, transparent 31% 47%, rgba(220, 38, 38, 0.22) 47% 53%, transparent 53% 72%, rgba(220, 38, 38, 0.16) 72% 78%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(220, 38, 38, 0.08) 100%);
+}
+
+.dashboard-layout .tone-green .stat-spark {
+  background:
+    linear-gradient(135deg, transparent 0 25%, rgba(22, 163, 74, 0.14) 25% 31%, transparent 31% 47%, rgba(22, 163, 74, 0.22) 47% 53%, transparent 53% 72%, rgba(22, 163, 74, 0.16) 72% 78%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(22, 163, 74, 0.08) 100%);
+}
+
+.dashboard-layout .tone-purple .stat-spark {
+  background:
+    linear-gradient(135deg, transparent 0 25%, rgba(124, 58, 237, 0.14) 25% 31%, transparent 31% 47%, rgba(124, 58, 237, 0.22) 47% 53%, transparent 53% 72%, rgba(124, 58, 237, 0.16) 72% 78%, transparent 78%),
+    linear-gradient(180deg, transparent 0%, rgba(124, 58, 237, 0.08) 100%);
+}
+
+.dashboard-layout .inventory-report-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 16px 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.dashboard-layout .report-info-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.dashboard-layout .inventory-report-strip strong,
+.dashboard-layout .inventory-report-strip span {
+  display: block;
+  line-height: 1.5;
+}
+
+.dashboard-layout .inventory-report-strip span {
+  color: #475569;
+  font-size: 13px;
+}
+
 .dashboard-layout .inventory-flow-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1918,9 +2155,48 @@ button {
   .dashboard-layout .inventory-flow-grid {
     grid-template-columns: 1fr;
   }
+
+  .dashboard-layout .inventory-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 760px) {
+  .dashboard-layout .inventory-status-card {
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .dashboard-layout .inventory-status-head {
+    flex-direction: column;
+  }
+
+  .dashboard-layout .inventory-detail-link {
+    padding-left: 0;
+  }
+
+  .dashboard-layout .inventory-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-layout .inventory-status-grid .stat-card {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .dashboard-layout .inventory-status-grid .stat-value {
+    margin-top: 22px;
+  }
+
+  .dashboard-layout .inventory-report-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dashboard-layout .inventory-report-strip .print-button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
   .dashboard-layout .flow-metric-grid {
     grid-template-columns: 1fr;
   }

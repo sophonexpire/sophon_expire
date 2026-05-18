@@ -80,12 +80,18 @@ const initialState = {
     sales14Value: 0,
     salesAvgDailyValue: 0,
     salesDocsValue: 0,
+    totalStockValue: 0,
+    warningStockValue: 0,
+    expiredStockValue: 0,
+    handledStockValue: 0,
+    damageStockValue: 0,
     stockSystemQty: 0,
     soldSystemQty: 0,
     damageSystemQty: 0,
     stockInMonthQty: 0,
     soldMonthQty: 0,
     damageMonthQty: 0,
+    lastUpdatedTime: "",
     safeCount: 0
   },
   urgentItems: [],
@@ -151,12 +157,41 @@ function Sidebar() {
   );
 }
 
-function StatCard({ tone, label, value, help, valueClassName }) {
+function formatCurrencyCompact(value) {
+  const num = Number(value || 0);
+  if (!Number.isFinite(num)) return "฿0";
+
+  if (Math.abs(num) >= 1000000) {
+    return `฿${new Intl.NumberFormat("th-TH", { maximumFractionDigits: 1 }).format(num / 1000000)} ล้าน`;
+  }
+
+  return new Intl.NumberFormat("th-TH", {
+    style: "currency",
+    currency: "THB",
+    maximumFractionDigits: 0
+  }).format(num);
+}
+
+function getBatchPrice(item) {
+  return Number(item?.products?.price || item?.product_price || 0);
+}
+
+function getBatchValue(item, qty = item?.quantity_num) {
+  return Number(qty || 0) * getBatchPrice(item);
+}
+
+function StatCard({ tone, label, value, valueLine, badge, help, valueClassName }) {
   return (
     <div className={`stat-card ${tone}`}>
-      <div className="stat-label">{label}</div>
+      <div className="stat-card-head">
+        <span className="stat-icon" aria-hidden="true" />
+        <div className="stat-label">{label}</div>
+      </div>
       <div className={`stat-value ${valueClassName}`}>{value}</div>
+      {valueLine ? <div className="stat-money">มูลค่ารวม {valueLine}</div> : null}
+      {badge ? <div className="stat-badge"><span aria-hidden="true" />{badge}</div> : null}
       <div className="stat-help">{help}</div>
+      <div className="stat-spark" aria-hidden="true" />
     </div>
   );
 }
@@ -345,7 +380,7 @@ export default function DashboardClient() {
       recentSalesStart.setDate(recentSalesStart.getDate() - 45);
 
       const [productsResult, batchesResult, damagesResult, uploadsResult] = await Promise.all([
-        supabase.from("products").select("id, product_code, barcode, product_name, unit").order("product_name", { ascending: true }),
+        supabase.from("products").select("id, product_code, barcode, product_name, unit, price").order("product_name", { ascending: true }),
         supabase.from("batches").select(`
           id,
           product_id,
@@ -358,7 +393,7 @@ export default function DashboardClient() {
           created_at,
           status,
           handling_status,
-          products:product_id ( id, product_code, barcode, product_name, unit ),
+          products:product_id ( id, product_code, barcode, product_name, unit, price ),
           suppliers:supplier_id ( id, name )
         `).order("expiry_date", { ascending: true }),
         supabase.from("damage_reports").select(`
@@ -373,7 +408,8 @@ export default function DashboardClient() {
           damage_status,
           note,
           reported_at,
-          updated_at
+          updated_at,
+          products:product_id ( id, price )
         `).order("reported_at", { ascending: false }),
         supabase
           .from("sales_uploads")
@@ -422,6 +458,7 @@ export default function DashboardClient() {
           ...item,
           product_display_name: item.product_name || "ไม่ระบุสินค้า",
           quantity_num: Number(item.damage_qty ?? 0),
+          product_price: Number(item.products?.price || 0),
           normalized_status: normalizedStatus,
           displayStatus: normalizedStatus
         };
@@ -438,6 +475,14 @@ export default function DashboardClient() {
       const handledCount = returnedBatchItems.length + returnedDamageItems.length;
       const activeStockItems = batches.filter((item) => !["returned", "disposed"].includes(item.displayStatus));
       const totalStockQty = activeStockItems.reduce((sum, item) => sum + Number(item.quantity_num || 0), 0);
+      const totalStockValue = activeStockItems.reduce((sum, item) => sum + getBatchValue(item), 0);
+      const warningStockValue = warningItems.reduce((sum, item) => sum + getBatchValue(item), 0);
+      const expiredStockValue = expiredItems.reduce((sum, item) => sum + getBatchValue(item), 0);
+      const handledStockValue = returnedBatchItems.reduce((sum, item) => {
+        const handledQty = Number(item.quantity_received_num || item.quantity_num || 0);
+        return sum + getBatchValue(item, handledQty);
+      }, 0) + returnedDamageItems.reduce((sum, item) => sum + (Number(item.quantity_num || 0) * Number(item.product_price || 0)), 0);
+      const damageStockValue = activeDamageItems.reduce((sum, item) => sum + (Number(item.quantity_num || 0) * Number(item.product_price || 0)), 0);
       const safeCount = batches.filter((item) => item.displayStatus === "safe" && item.quantity_num > 0).length;
       const fefoBuckets = batches.reduce((acc, item) => {
         if (item.quantity_num <= 0 || ["returned", "disposed"].includes(item.displayStatus)) return acc;
@@ -516,12 +561,18 @@ export default function DashboardClient() {
           sales14Value: sales14Total,
           salesAvgDailyValue: avgDailySalesAll,
           salesDocsValue: recentUploads.length,
+          totalStockValue,
+          warningStockValue,
+          expiredStockValue,
+          handledStockValue,
+          damageStockValue,
           stockSystemQty: totalStockQty,
           soldSystemQty,
           damageSystemQty,
           stockInMonthQty,
           soldMonthQty,
           damageMonthQty,
+          lastUpdatedTime: new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }),
           safeCount
         }
       }));
@@ -683,15 +734,24 @@ export default function DashboardClient() {
 
           {state.error ? <div className="empty-state">{state.error}</div> : null}
 
-          <section className="overview-grid">
+          <section className="inventory-status-card">
             <div>
-              <div className="section-head"><div><div className="section-kicker">ภาพรวมหลัก</div><h2>ตัวเลขสำคัญ</h2><p>ดูภาพรวมก่อน ว่าวันนี้มีของคงเหลือ งานด่วน และงานค้างเท่าไร</p></div></div>
-              <div className="stats-grid">
-                <StatCard tone="tone-green" label="สต๊อกคงเหลือรวม" value={formatQtyCompact(state.stats.totalStockQty)} help="รวมสินค้าคงเหลือทั้งหมด" valueClassName="text-green" />
-                <StatCard tone="tone-blue" label="ล็อตทั้งหมด" value={state.stats.totalBatches} help="จำนวนล็อตทั้งหมดในระบบ" valueClassName="text-blue" />
-                <StatCard tone="tone-orange" label="ใกล้หมดอายุ" value={state.stats.urgentCount} help="หมดอายุใน 2 เดือน" valueClassName="text-orange" />
-                <StatCard tone="tone-red" label="หมดอายุแล้ว" value={state.stats.expiredCount} help="ควรรีบจัดการ" valueClassName="text-red" />
-                <StatCard tone="tone-purple" label="สินค้าชำรุด" value={state.stats.damagedCount} help="ของชำรุดที่ยังค้าง" valueClassName="text-purple" />
+              <div className="inventory-status-head">
+                <div>
+                  <div className="inventory-title-row">
+                    <h2>ภาพรวมสินค้าทั้งหมด</h2>
+                    <span>สรุปสถานะสำคัญ</span>
+                  </div>
+                  <p>ติดตามสถานะสินค้าในทุกมิติแบบเรียลไทม์ โดยนับสินค้าใกล้หมดอายุภายใน 2 เดือน</p>
+                </div>
+                <a className="inventory-detail-link" href="/batches" aria-label="ดูรายละเอียดสินค้าทั้งหมด">ดูรายละเอียดทั้งหมด</a>
+              </div>
+              <div className="stats-grid inventory-status-grid">
+                <StatCard tone="tone-blue" label="ปริมาณสินค้าคงเหลือทั้งหมด" value={formatQtyCompact(state.stats.totalStockQty)} valueLine={formatCurrencyCompact(state.stats.totalStockValue)} badge={`อัปเดตล่าสุด ${state.stats.lastUpdatedTime || "-"}`} help="รวมสินค้าคงเหลือจากล็อตที่ยังอยู่ในระบบ" valueClassName="text-blue" />
+                <StatCard tone="tone-orange" label="ปริมาณสินค้าใกล้หมดอายุ" value={state.stats.urgentCount} valueLine={formatCurrencyCompact(state.stats.warningStockValue)} badge="ภายใน 2 เดือน" help="นับเฉพาะล็อตที่ยังไม่หมดอายุและเหลือไม่เกิน 60 วัน" valueClassName="text-orange" />
+                <StatCard tone="tone-red" label="ปริมาณสินค้าหมดอายุ" value={state.stats.expiredCount} valueLine={formatCurrencyCompact(state.stats.expiredStockValue)} badge="หมดอายุแล้ว" help="ล็อตที่เลยวันหมดอายุและยังไม่ได้ปิดงาน" valueClassName="text-red" />
+                <StatCard tone="tone-green" label="ปริมาณสินค้าทำเรื่องคืนแล้ว" value={state.stats.focusHandledTotal} valueLine={formatCurrencyCompact(state.stats.handledStockValue)} badge="ดำเนินการคืนแล้ว" help="รวมรายการที่คืน supplier หรือทำลายแล้ว" valueClassName="text-green" />
+                <StatCard tone="tone-purple" label="ปริมาณสินค้าชำรุด" value={state.stats.damagedCount} valueLine={formatCurrencyCompact(state.stats.damageStockValue)} badge="รอดำเนินการจัดการ" help="ของชำรุดที่ยังค้างอยู่ในระบบ" valueClassName="text-purple" />
               </div>
               <div className="inventory-flow-grid" aria-label="สรุปการเคลื่อนไหวสินค้า">
                 <div className="flow-panel">
@@ -722,6 +782,14 @@ export default function DashboardClient() {
                     <FlowMetric tone="tone-red" label="เสียหายเดือนนี้" value={formatQtyCompact(state.stats.damageMonthQty)} help="รวมรายการเสียหายที่รายงานในเดือนนี้" />
                   </div>
                 </div>
+              </div>
+              <div className="inventory-report-strip">
+                <div className="report-info-icon" aria-hidden="true">i</div>
+                <div>
+                  <strong>อัปเดตข้อมูลล่าสุดเมื่อ {state.stats.lastUpdatedTime || "-"}</strong>
+                  <span>ข้อมูลอาจเปลี่ยนแปลงได้ตลอดเวลา จากระบบ Expire Program</span>
+                </div>
+                <button className="secondary-button print-button" type="button" onClick={handlePrint}>พิมพ์รายงาน</button>
               </div>
             </div>
             <div>
