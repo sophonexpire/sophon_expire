@@ -432,6 +432,16 @@
       color: #1d4ed8;
     }
 
+    .pdf-deduct-line.is-manual {
+      border-color: #fed7aa;
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    .pdf-deduct-line.is-manual strong {
+      color: #c2410c;
+    }
+
     /* Stock Out page polish */
     .stockout-guide {
       display: grid;
@@ -1375,6 +1385,7 @@
       salesBatchDeductMap: {},
       salesBatchDeductHistoryMap: {},
       salesUploadDeductMap: {},
+      manualStockCutHistoryMap: {},
       pdfPreviewLines: [],
       currentUser: null,
       loading: {
@@ -2372,6 +2383,53 @@ function formatEditorTimestamp(value) {
 
       state.salesBatchDeductHistoryMap = historyMap;
       state.salesUploadDeductMap = uploadDeductMap;
+    }
+
+    async function loadManualStockCutHistory() {
+      const movements = [];
+      let from = 0;
+
+      while (true) {
+        const to = from + 999;
+        const { data, error } = await supabaseClient
+          .from("stock_movements")
+          .select("batch_id, product_id, qty_in, qty_out, movement_type, reference_type, created_at, note")
+          .eq("reference_type", "manual_stock_cut")
+          .eq("movement_type", "manual_stock_cut")
+          .range(from, to);
+
+        if (error) throw error;
+
+        const batch = data || [];
+        movements.push(...batch);
+        if (batch.length < 1000) break;
+        from += 1000;
+      }
+
+      const historyMap = {};
+      movements.forEach(item => {
+        const batchId = String(item.batch_id || "");
+        if (!batchId) return;
+
+        const qty = normalizeNumber(item.qty_out) - normalizeNumber(item.qty_in);
+        if (qty <= 0) return;
+
+        const entry = {
+          qty,
+          createdAt: item.created_at || "",
+          dateText: formatThaiShortDate(item.created_at || ""),
+          note: item.note || ""
+        };
+
+        if (!historyMap[batchId]) historyMap[batchId] = [];
+        historyMap[batchId].push(entry);
+      });
+
+      Object.values(historyMap).forEach(list => {
+        list.sort((a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+      });
+
+      state.manualStockCutHistoryMap = historyMap;
     }
 
     function populateSalesUploadSelect() {
@@ -4437,6 +4495,13 @@ function formatEditorTimestamp(value) {
       );
     }
 
+    function getManualDeductTotalForGroup(groupItems) {
+      return groupItems.reduce((sum, item) => {
+        const history = state.manualStockCutHistoryMap[String(item.id)] || [];
+        return sum + history.reduce((historySum, entry) => historySum + normalizeNumber(entry.qty), 0);
+      }, 0);
+    }
+
     function getSelectedDeductTotal() {
       return Object.values(state.salesBatchDeductMap)
         .reduce((sum, value) => sum + normalizeNumber(value), 0);
@@ -4477,7 +4542,19 @@ function formatEditorTimestamp(value) {
 
     function getSalesAndDeductSummaryForProduct(groupItems) {
       const selectedUploadId = getSelectedUploadId();
+      const manualDeductedQty = getManualDeductTotalForGroup(groupItems);
       if (!selectedUploadId) {
+        if (manualDeductedQty > 0) {
+          return `
+            <div class="pdf-deduct-summary">
+              <div class="pdf-deduct-line is-manual">
+                <span>ตัดเอง</span>
+                <strong>${escapeHtml(formatQty(manualDeductedQty))}</strong>
+              </div>
+              <div class="sub-mini-text">ยังไม่ได้เลือกเอกสาร PDF</div>
+            </div>
+          `;
+        }
         return `<div class="sub-mini-text">เลือกเอกสาร PDF</div>`;
       }
 
@@ -4485,7 +4562,7 @@ function formatEditorTimestamp(value) {
       const salesQty = getSelectedSalesTotalForGroup(groupItems);
       const deductedQty = getSelectedDeductTotalForGroup(groupItems);
 
-      if (!state.salesLines.length && deductedQty <= 0) {
+      if (!state.salesLines.length && deductedQty <= 0 && manualDeductedQty <= 0) {
         return `<div class="sub-mini-text">ยังไม่มีรายการจาก PDF</div>`;
       }
 
@@ -4500,6 +4577,12 @@ function formatEditorTimestamp(value) {
             <span>ตัดสต๊อกแล้ว</span>
             <strong>${escapeHtml(formatQty(deductedQty))}</strong>
           </div>
+          ${manualDeductedQty > 0 ? `
+            <div class="pdf-deduct-line is-manual">
+              <span>ตัดเอง</span>
+              <strong>${escapeHtml(formatQty(manualDeductedQty))}</strong>
+            </div>
+          ` : ""}
         </div>
       `;
     }
@@ -4685,6 +4768,7 @@ function formatEditorTimestamp(value) {
       const daysLeft = getDaysLeftText(item.days_left);
       const deductedQty = normalizeNumber(state.salesBatchDeductMap[String(item.id)] || 0);
       const deductHistory = state.salesBatchDeductHistoryMap[String(item.id)] || [];
+      const manualHistory = state.manualStockCutHistoryMap[String(item.id)] || [];
       const batchStatusText = item.calculated_status === "expired"
         ? "หมดอายุ"
         : item.calculated_status === "warning"
@@ -4707,6 +4791,16 @@ function formatEditorTimestamp(value) {
               const isSelected = selectedUploadId && String(entry.uploadId) === String(selectedUploadId);
               return `<div class="lot-history-line${isSelected ? " is-selected" : ""}">-${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.salesDateText)} | ${escapeHtml(entry.fileName || "-")}</div>`;
             }).join("")}
+          </div>`
+        : "";
+      const manualHistoryHtml = manualHistory.length
+        ? `<div class="lot-history-box" style="border-top:1px dashed #fed7aa;">
+            <div class="lot-history-title" style="color:#c2410c;">ประวัติตัดเอง</div>
+            ${manualHistory.map(entry => `
+              <div class="lot-history-line" style="color:#9a3412;">
+                <strong>ตัดเอง</strong> -${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.dateText || "-")}
+              </div>
+            `).join("")}
           </div>`
         : "";
 
@@ -4732,6 +4826,7 @@ function formatEditorTimestamp(value) {
           </div>
           ${deductInfo}
           ${deductHistoryHtml}
+          ${manualHistoryHtml}
           ${checkInfo}
         </div>
       `;
@@ -4845,6 +4940,7 @@ function openProductStockCheckModal(barcode, productId) {
         const batchStatus = getStatus(calculateDaysLeft(item.expiry_date));
         const deductedQty = normalizeNumber(state.salesBatchDeductMap[String(item.id)] || 0);
         const deductHistory = state.salesBatchDeductHistoryMap[String(item.id)] || [];
+        const manualHistory = state.manualStockCutHistoryMap[String(item.id)] || [];
         const selectedUploadId = getSelectedUploadId();
         const originalQty = normalizeNumber(item.quantity_remaining) + deductedQty;
         const rowClass = batchStatus === "expired"
@@ -4862,6 +4958,12 @@ function openProductStockCheckModal(barcode, productId) {
               }).join("")}
             </div>`
           : "";
+        const manualHistoryHtml = manualHistory.length
+          ? `<div class="sub-mini-text" style="margin-top:6px; color:#92400e;">
+              <div style="font-weight:800; color:#c2410c; margin-bottom:3px;">ตัดสต๊อกเอง</div>
+              ${manualHistory.map(entry => `<div><strong>ตัดเอง</strong> -${escapeHtml(formatQty(entry.qty))} | ${escapeHtml(entry.dateText || "-")}</div>`).join("")}
+            </div>`
+          : "";
 
         return `
         <tr data-batch-id="${item.id}" class="${rowClass}">
@@ -4871,6 +4973,7 @@ function openProductStockCheckModal(barcode, productId) {
           <td class="deducted-qty-cell">
             ${escapeHtml(formatQty(deductedQty))}
             ${historyHtml}
+            ${manualHistoryHtml}
           </td>
           <td class="system-qty-cell">${escapeHtml(formatQty(item.quantity_remaining))}</td>
           <td>
@@ -5320,6 +5423,7 @@ function openProductStockCheckModal(barcode, productId) {
         loadSalesUploads()
       ]);
       await loadSalesBatchDeductionHistory();
+      await loadManualStockCutHistory();
 
       populateManualStockCutProducts();
       populateSalesUploadSelect();
