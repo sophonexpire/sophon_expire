@@ -4658,8 +4658,10 @@
 
     @media (max-width: 720px) {
       .inventory-intelligence {
-        padding: 16px;
+        padding: 14px;
         border-radius: 18px;
+        gap: 14px;
+        overflow: hidden;
       }
 
       .intel-head,
@@ -4668,6 +4670,19 @@
       .intel-footer {
         display: grid;
         grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .intel-head h2,
+      .intel-card h3 {
+        overflow-wrap: anywhere;
+      }
+
+      .intel-head p,
+      .intel-muted,
+      .intel-card-head p {
+        font-size: 13px;
+        line-height: 1.65;
       }
 
       .intel-link,
@@ -4678,15 +4693,106 @@
 
       .range-tabs {
         width: 100%;
+        justify-content: stretch;
       }
 
-      .range-tabs span {
+      .range-tabs span,
+      .range-tabs button {
         min-width: 0;
         flex: 1;
       }
 
+      .progress-summary-tabs {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .progress-summary-tabs span {
+        justify-content: center;
+      }
+
+      .chart-wrap.intel-chart {
+        min-height: 340px !important;
+        margin-top: 12px !important;
+      }
+
+      .purchase-filter-bar {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .purchase-filter-btn {
+        width: 100%;
+        min-height: 42px;
+      }
+
       .purchase-summary {
         grid-template-columns: 1fr;
+      }
+
+      .purchase-table-section {
+        padding: 12px;
+      }
+
+      .purchase-table-head {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .purchase-table-head span {
+        justify-self: start;
+      }
+
+      .purchase-table {
+        min-width: 0;
+        border-spacing: 0 10px;
+      }
+
+      .purchase-table thead {
+        display: none;
+      }
+
+      .purchase-table tbody,
+      .purchase-table tr,
+      .purchase-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .purchase-table tr {
+        padding: 12px;
+        border: 1px solid #dbe6f4;
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .purchase-table td {
+        display: grid;
+        grid-template-columns: minmax(92px, 36%) minmax(0, 1fr);
+        gap: 10px;
+        padding: 8px 0;
+        border: 0;
+        background: transparent !important;
+        font-size: 13px;
+      }
+
+      .purchase-table td::before {
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .purchase-table td:nth-child(1)::before { content: "สินค้า"; }
+      .purchase-table td:nth-child(2)::before { content: "รหัส"; }
+      .purchase-table td:nth-child(3)::before { content: "คงเหลือ"; }
+      .purchase-table td:nth-child(4)::before { content: "ขายล่าสุด"; }
+      .purchase-table td:nth-child(5)::before { content: "แนะนำสั่ง"; }
+      .purchase-table td:nth-child(6)::before { content: "สถานะ"; }
+
+      .purchase-table .product-main {
+        max-width: none;
+        overflow-wrap: anywhere;
       }
 
       .status-donut-layout,
@@ -4706,6 +4812,32 @@
       .purchase-qty {
         grid-column: 2;
         text-align: left;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .inventory-intelligence {
+        padding: 12px;
+        border-radius: 16px;
+      }
+
+      .intel-card {
+        padding: 14px;
+        border-radius: 16px;
+      }
+
+      .chart-wrap.intel-chart {
+        min-height: 380px !important;
+      }
+
+      .range-tabs button {
+        min-height: 40px;
+        font-size: 12px;
+      }
+
+      .purchase-table td {
+        grid-template-columns: 1fr;
+        gap: 4px;
       }
     }
   </style>
