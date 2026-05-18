@@ -3948,6 +3948,30 @@
       box-shadow: 0 24px 55px rgba(15, 23, 42, 0.07);
     }
 
+    .lot-overview-head {
+      margin-top: clamp(28px, 3vw, 44px);
+      padding-top: clamp(22px, 2.5vw, 32px);
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .lot-overview-head h3 {
+      margin: 0;
+      color: #0f172a;
+      font-size: clamp(22px, 2vw, 30px);
+      line-height: 1.3;
+    }
+
+    .lot-overview-head p {
+      margin: 6px 0 0;
+      color: #64748b;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .manager-command.inventory-overview-card .lot-status-grid {
+      margin-top: clamp(18px, 2vw, 26px);
+    }
+
     .intel-head,
     .intel-card-head {
       display: flex;
@@ -4564,6 +4588,70 @@
             <div class="manager-metric-value" id="managerDamagedQty">0</div>
             <div class="manager-metric-money" id="managerDamagedValue">มูลค่ารวม ฿0.00</div>
             <div class="inventory-status-chip"><span></span>รอดำเนินการจัดการ</div>
+            <div class="inventory-spark" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="lot-overview-head">
+          <div>
+            <h3>ภาพรวมระดับล็อต</h3>
+            <p>นับจำนวนล็อต/รายการจากฐานข้อมูล เพื่อดูว่างานกระจายอยู่กี่ล็อต</p>
+          </div>
+        </div>
+
+        <div class="manager-metrics inventory-status-grid lot-status-grid">
+          <div class="manager-metric inventory-metric stock">
+            <div class="inventory-metric-head">
+              <div class="inventory-icon" aria-hidden="true">□</div>
+              <div class="manager-metric-label">ล็อตสินค้าคงเหลือทั้งหมด</div>
+            </div>
+            <div class="manager-metric-value" id="managerStockLots">0</div>
+            <div class="manager-metric-money" id="managerStockLotsValue">มูลค่ารวม ฿0.00</div>
+            <div class="inventory-status-chip"><span></span>นับจาก batches</div>
+            <div class="inventory-spark" aria-hidden="true"></div>
+          </div>
+
+          <div class="manager-metric inventory-metric near-expire">
+            <div class="inventory-metric-head">
+              <div class="inventory-icon" aria-hidden="true">◷</div>
+              <div class="manager-metric-label">ล็อตสินค้าใกล้หมดอายุ</div>
+            </div>
+            <div class="manager-metric-value" id="managerNearExpireLots">0</div>
+            <div class="manager-metric-money" id="managerNearExpireLotsValue">มูลค่ารวม ฿0.00</div>
+            <div class="inventory-status-chip"><span></span>ภายใน 2 เดือน</div>
+            <div class="inventory-spark" aria-hidden="true"></div>
+          </div>
+
+          <div class="manager-metric inventory-metric expired">
+            <div class="inventory-metric-head">
+              <div class="inventory-icon" aria-hidden="true">△</div>
+              <div class="manager-metric-label">ล็อตสินค้าหมดอายุ</div>
+            </div>
+            <div class="manager-metric-value" id="managerExpiredLots">0</div>
+            <div class="manager-metric-money" id="managerExpiredLotsValue">มูลค่ารวม ฿0.00</div>
+            <div class="inventory-status-chip"><span></span>หมดอายุแล้ว</div>
+            <div class="inventory-spark" aria-hidden="true"></div>
+          </div>
+
+          <div class="manager-metric inventory-metric returned">
+            <div class="inventory-metric-head">
+              <div class="inventory-icon" aria-hidden="true">↻</div>
+              <div class="manager-metric-label">ล็อตที่ทำเรื่องคืนแล้ว</div>
+            </div>
+            <div class="manager-metric-value" id="managerHandledLots">0</div>
+            <div class="manager-metric-money" id="managerHandledLotsValue">มูลค่ารวม ฿0.00</div>
+            <div class="inventory-status-chip"><span></span>คืน supplier / ทำลายแล้ว</div>
+            <div class="inventory-spark" aria-hidden="true"></div>
+          </div>
+
+          <div class="manager-metric inventory-metric damaged">
+            <div class="inventory-metric-head">
+              <div class="inventory-icon" aria-hidden="true">▱</div>
+              <div class="manager-metric-label">รายการชำรุดค้างจัดการ</div>
+            </div>
+            <div class="manager-metric-value" id="managerDamageLots">0</div>
+            <div class="manager-metric-money" id="managerDamageLotsValue">มูลค่ารวม ฿0.00</div>
+            <div class="inventory-status-chip"><span></span>จาก damage_reports</div>
             <div class="inventory-spark" aria-hidden="true"></div>
           </div>
         </div>
@@ -6158,6 +6246,8 @@
       handledValue,
       totalStockQty,
       totalStockValue,
+      stockLotCount,
+      handledLotCount,
       reorderRows
     }) {
       const totalStockQuantity = Number(totalStockQty || 0);
@@ -6180,6 +6270,17 @@
       setTextWithTitle("managerReorderValue", `มูลค่ารวม ${formatMoney(expiredValue)}`, formatMoney(expiredValue), `มูลค่าสินค้าหมดอายุ ${formatMoney(expiredValue)}`);
       setTextWithTitle("managerClosedValue", `มูลค่ารวม ${formatMoney(handledValue)}`, formatMoney(handledValue), `มูลค่าสินค้าที่ทำเรื่องคืนหรือจัดการแล้ว ${formatMoney(handledValue)}`);
       setTextWithTitle("managerDamagedValue", `มูลค่ารวม ${formatMoney(damageValue)}`, formatMoney(damageValue), `มูลค่าสินค้าชำรุด ${formatMoney(damageValue)}`);
+
+      setTextWithTitle("managerStockLots", formatQtyCompact(stockLotCount), formatQtyCompact(stockLotCount), `ล็อตสินค้าคงเหลือทั้งหมด ${formatQtyCompact(stockLotCount)} ล็อต`);
+      setTextWithTitle("managerNearExpireLots", formatQtyCompact(warningItems.length), formatQtyCompact(warningItems.length), `ล็อตสินค้าใกล้หมดอายุ ${formatQtyCompact(warningItems.length)} ล็อต`);
+      setTextWithTitle("managerExpiredLots", formatQtyCompact(expiredItems.length), formatQtyCompact(expiredItems.length), `ล็อตสินค้าหมดอายุ ${formatQtyCompact(expiredItems.length)} ล็อต`);
+      setTextWithTitle("managerHandledLots", formatQtyCompact(handledLotCount), formatQtyCompact(handledLotCount), `ล็อตที่ทำเรื่องคืนหรือทำลายแล้ว ${formatQtyCompact(handledLotCount)} ล็อต`);
+      setTextWithTitle("managerDamageLots", formatQtyCompact(damageItems.length), formatQtyCompact(damageItems.length), `รายการชำรุดค้างจัดการ ${formatQtyCompact(damageItems.length)} รายการ`);
+      setTextWithTitle("managerStockLotsValue", `มูลค่ารวม ${formatMoney(totalStockValue)}`, formatMoney(totalStockValue), `มูลค่าล็อตสินค้าคงเหลือทั้งหมด ${formatMoney(totalStockValue)}`);
+      setTextWithTitle("managerNearExpireLotsValue", `มูลค่ารวม ${formatMoney(warningValue)}`, formatMoney(warningValue), `มูลค่าล็อตสินค้าใกล้หมดอายุ ${formatMoney(warningValue)}`);
+      setTextWithTitle("managerExpiredLotsValue", `มูลค่ารวม ${formatMoney(expiredValue)}`, formatMoney(expiredValue), `มูลค่าล็อตสินค้าหมดอายุ ${formatMoney(expiredValue)}`);
+      setTextWithTitle("managerHandledLotsValue", `มูลค่ารวม ${formatMoney(handledValue)}`, formatMoney(handledValue), `มูลค่าล็อตที่จัดการแล้ว ${formatMoney(handledValue)}`);
+      setTextWithTitle("managerDamageLotsValue", `มูลค่ารวม ${formatMoney(damageValue)}`, formatMoney(damageValue), `มูลค่ารายการชำรุด ${formatMoney(damageValue)}`);
 
       document.getElementById("managerUpdatedAt").textContent =
         `อัปเดตข้อมูลล่าสุดเมื่อ ${nowText} น. ข้อมูลอาจเปลี่ยนแปลงได้ตลอดเวลา`;
@@ -6347,6 +6448,12 @@
 
         const expiredItems = urgentExpireItems.filter(item => item.displayStatus === "expired");
         const warningItems = urgentExpireItems.filter(item => item.displayStatus === "warning");
+        const stockLotCount = batches.filter(item =>
+          item.quantity_num > 0 &&
+          item.displayStatus !== "returned" &&
+          item.displayStatus !== "disposed"
+        ).length;
+        const handledLotCount = returnedBatchItems.length;
         const handledCount = returnedBatchItems.length + returnedDamageItems.length;
         const handledQty =
           returnedBatchItems.reduce((sum, item) => sum + Number(item.quantity_received_num || item.quantity_num || 0), 0) +
@@ -6413,6 +6520,8 @@
           handledValue,
           totalStockQty,
           totalStockValue,
+          stockLotCount,
+          handledLotCount,
           reorderRows
         });
 
