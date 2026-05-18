@@ -31,7 +31,8 @@ import {
   getCalculatedStatus,
   getFinalHandlingStatus,
   NEAR_EXPIRY_WARNING_DAYS,
-  normalizeDamageStatus
+  normalizeDamageStatus,
+  parseSalesQty
 } from "@/lib/dashboard-utils";
 
 Chart.register(
@@ -79,6 +80,12 @@ const initialState = {
     sales14Value: 0,
     salesAvgDailyValue: 0,
     salesDocsValue: 0,
+    stockSystemQty: 0,
+    soldSystemQty: 0,
+    damageSystemQty: 0,
+    stockInMonthQty: 0,
+    soldMonthQty: 0,
+    damageMonthQty: 0,
     safeCount: 0
   },
   urgentItems: [],
@@ -152,6 +159,37 @@ function StatCard({ tone, label, value, help, valueClassName }) {
       <div className="stat-help">{help}</div>
     </div>
   );
+}
+
+function FlowMetric({ tone, label, value, help }) {
+  return (
+    <div className={`flow-metric ${tone}`}>
+      <span className="flow-dot" aria-hidden="true" />
+      <div>
+        <div className="flow-label">{label}</div>
+        <div className="flow-value">{value}</div>
+        <div className="flow-help">{help}</div>
+      </div>
+    </div>
+  );
+}
+
+function getCurrentMonthRange() {
+  const start = new Date();
+  start.setDate(1);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
+
+  return { start, end };
+}
+
+function isInDateRange(value, start, end) {
+  if (!value) return false;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+  return date >= start && date < end;
 }
 
 export default function DashboardClient() {
@@ -313,8 +351,11 @@ export default function DashboardClient() {
           product_id,
           supplier_id,
           batch_no,
+          received_date,
           expiry_date,
+          quantity_received,
           quantity_remaining,
+          created_at,
           status,
           handling_status,
           products:product_id ( id, product_code, barcode, product_name, unit ),
@@ -337,7 +378,6 @@ export default function DashboardClient() {
         supabase
           .from("sales_uploads")
           .select("id, sales_date, uploaded_at, status")
-          .gte("sales_date", recentSalesStart.toISOString().slice(0, 10))
           .order("sales_date", { ascending: false })
       ]);
 
@@ -371,7 +411,8 @@ export default function DashboardClient() {
           supplier_display_name: item.suppliers?.name || "-",
           daysLeft,
           displayStatus,
-          quantity_num: Number(item.quantity_remaining ?? 0)
+          quantity_num: Number(item.quantity_remaining ?? 0),
+          quantity_received_num: Number(item.quantity_received ?? 0)
         };
       });
 
@@ -395,7 +436,8 @@ export default function DashboardClient() {
       const expiredItems = urgentItems.filter((item) => item.displayStatus === "expired");
       const warningItems = urgentItems.filter((item) => item.displayStatus === "warning");
       const handledCount = returnedBatchItems.length + returnedDamageItems.length;
-      const totalStockQty = batches.reduce((sum, item) => sum + Number(item.quantity_num || 0), 0);
+      const activeStockItems = batches.filter((item) => !["returned", "disposed"].includes(item.displayStatus));
+      const totalStockQty = activeStockItems.reduce((sum, item) => sum + Number(item.quantity_num || 0), 0);
       const safeCount = batches.filter((item) => item.displayStatus === "safe" && item.quantity_num > 0).length;
       const fefoBuckets = batches.reduce((acc, item) => {
         if (item.quantity_num <= 0 || ["returned", "disposed"].includes(item.displayStatus)) return acc;
@@ -406,15 +448,43 @@ export default function DashboardClient() {
         return acc;
       }, { expired: 0, next60: 0, over60: 0 });
 
+      const allUploads = uploadsResult.data || [];
+      const recentUploads = allUploads.filter((item) => {
+        const dateValue = item.sales_date || item.uploaded_at;
+        if (!dateValue) return false;
+        return new Date(dateValue) >= recentSalesStart;
+      });
+      const recentUploadIds = new Set(recentUploads.map((item) => Number(item.id)));
+      const recentSalesLines = salesLines.filter((line) => recentUploadIds.has(Number(line.sales_upload_id)));
+      const uploadsById = new Map(allUploads.map((item) => [Number(item.id), item]));
+      const monthRange = getCurrentMonthRange();
+      const soldSystemQty = salesLines.reduce((sum, line) => sum + parseSalesQty(line.sold_qty), 0);
+      const soldMonthQty = salesLines.reduce((sum, line) => {
+        const upload = uploadsById.get(Number(line.sales_upload_id));
+        const lineDate = upload?.sales_date || upload?.uploaded_at || line.created_at;
+        return isInDateRange(lineDate, monthRange.start, monthRange.end) ? sum + parseSalesQty(line.sold_qty) : sum;
+      }, 0);
+      const damageSystemQty = damageReports.reduce((sum, item) => sum + Number(item.quantity_num || 0), 0);
+      const damageMonthQty = damageReports.reduce((sum, item) => (
+        isInDateRange(item.reported_at || item.updated_at, monthRange.start, monthRange.end)
+          ? sum + Number(item.quantity_num || 0)
+          : sum
+      ), 0);
+      const stockInMonthQty = activeStockItems.reduce((sum, item) => (
+        isInDateRange(item.received_date || item.created_at, monthRange.start, monthRange.end)
+          ? sum + Number(item.quantity_received_num || 0)
+          : sum
+      ), 0);
+
       const urgentProductGroups = buildUrgentProductGroups(urgentItems);
       const issueRanking = buildIssueRanking(urgentItems, activeDamageItems);
       const expiryTrend = buildExpiryTrend(urgentItems);
-      const rawReorderRows = buildReorderRows(productsResult.data || [], batches, uploadsResult.data || [], salesLines, coverageDays);
+      const rawReorderRows = buildReorderRows(productsResult.data || [], batches, recentUploads, recentSalesLines, coverageDays);
       const reorderRows = applyCoverage(rawReorderRows, coverageDays);
-      const salesTrend = buildSalesTrendData(uploadsResult.data || [], salesLines);
-      const topSalesProducts = buildTopSalesProducts(productsResult.data || [], uploadsResult.data || [], salesLines);
+      const salesTrend = buildSalesTrendData(recentUploads, recentSalesLines);
+      const topSalesProducts = buildTopSalesProducts(productsResult.data || [], recentUploads, recentSalesLines);
       const sales14Total = topSalesProducts.reduce((sum, item) => sum + Number(item.qty || 0), 0);
-      const sales30Metrics = buildSalesMetrics(productsResult.data || [], batches, uploadsResult.data || [], salesLines);
+      const sales30Metrics = buildSalesMetrics(productsResult.data || [], batches, recentUploads, recentSalesLines);
       const avgDailySalesAll = sales30Metrics.reduce((sum, item) => sum + Number(item.avgDailySales || 0), 0);
 
       setState((current) => ({
@@ -445,7 +515,13 @@ export default function DashboardClient() {
           alertReorderCount: reorderRows.length,
           sales14Value: sales14Total,
           salesAvgDailyValue: avgDailySalesAll,
-          salesDocsValue: (uploadsResult.data || []).length,
+          salesDocsValue: recentUploads.length,
+          stockSystemQty: totalStockQty,
+          soldSystemQty,
+          damageSystemQty,
+          stockInMonthQty,
+          soldMonthQty,
+          damageMonthQty,
           safeCount
         }
       }));
@@ -611,6 +687,36 @@ export default function DashboardClient() {
                 <StatCard tone="tone-orange" label="ใกล้หมดอายุ" value={state.stats.urgentCount} help="หมดอายุใน 2 เดือน" valueClassName="text-orange" />
                 <StatCard tone="tone-red" label="หมดอายุแล้ว" value={state.stats.expiredCount} help="ควรรีบจัดการ" valueClassName="text-red" />
                 <StatCard tone="tone-purple" label="สินค้าชำรุด" value={state.stats.damagedCount} help="ของชำรุดที่ยังค้าง" valueClassName="text-purple" />
+              </div>
+              <div className="inventory-flow-grid" aria-label="สรุปการเคลื่อนไหวสินค้า">
+                <div className="flow-panel">
+                  <div className="flow-panel-head">
+                    <div>
+                      <div className="section-kicker">สถานะปัจจุบัน</div>
+                      <h3>สินค้าในระบบตอนนี้</h3>
+                    </div>
+                    <span className="flow-period">รวมทั้งหมด</span>
+                  </div>
+                  <div className="flow-metric-grid">
+                    <FlowMetric tone="tone-green" label="คงเหลือในระบบ" value={formatQtyCompact(state.stats.stockSystemQty)} help="รวมจำนวนคงเหลือจากล็อตที่ยังอยู่ในระบบ" />
+                    <FlowMetric tone="tone-blue" label="ขายออกแล้ว" value={formatQtyCompact(state.stats.soldSystemQty)} help="รวมจำนวนขายจากเอกสารขายทั้งหมด" />
+                    <FlowMetric tone="tone-red" label="ชำรุด/เสียหาย" value={formatQtyCompact(state.stats.damageSystemQty)} help="รวมจำนวนที่ถูกบันทึกเป็นสินค้าเสียหาย" />
+                  </div>
+                </div>
+                <div className="flow-panel">
+                  <div className="flow-panel-head">
+                    <div>
+                      <div className="section-kicker">เดือนนี้</div>
+                      <h3>การเคลื่อนไหวเดือนนี้</h3>
+                    </div>
+                    <span className="flow-period">{new Date().toLocaleDateString("th-TH", { month: "short", year: "numeric" })}</span>
+                  </div>
+                  <div className="flow-metric-grid">
+                    <FlowMetric tone="tone-green" label="รับเข้าเดือนนี้" value={formatQtyCompact(state.stats.stockInMonthQty)} help="รวมจำนวนรับเข้าจากล็อตที่รับในเดือนนี้" />
+                    <FlowMetric tone="tone-blue" label="ขายเดือนนี้" value={formatQtyCompact(state.stats.soldMonthQty)} help="รวมยอดขายจากเอกสารขายเดือนนี้" />
+                    <FlowMetric tone="tone-red" label="เสียหายเดือนนี้" value={formatQtyCompact(state.stats.damageMonthQty)} help="รวมรายการเสียหายที่รายงานในเดือนนี้" />
+                  </div>
+                </div>
               </div>
             </div>
             <div>
