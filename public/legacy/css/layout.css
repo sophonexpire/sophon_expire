@@ -1500,18 +1500,31 @@ textarea:focus-visible {
     height: auto !important;
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
+    gap: 8px !important;
     overflow-x: auto !important;
-    padding: 8px !important;
+    overflow-y: hidden !important;
+    padding: 8px 10px !important;
     border-right: 0 !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+    background:
+      linear-gradient(90deg, rgba(249, 115, 22, 0.2) 0%, transparent 26%),
+      #050b1f !important;
+    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.22) !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .sidebar::-webkit-scrollbar {
+    display: none !important;
   }
 
   .sidebar h2 {
-    flex: 0 0 54px !important;
-    width: 54px !important;
-    height: 54px !important;
+    flex: 0 0 46px !important;
+    width: 46px !important;
+    height: 46px !important;
     margin: 0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 18px rgba(2, 6, 23, 0.22) !important;
   }
 
   .sidebar h2::before {
@@ -1526,7 +1539,33 @@ textarea:focus-visible {
     flex: 0 0 auto !important;
     white-space: nowrap !important;
     margin: 0 !important;
-    padding: 0 12px !important;
+    min-height: 40px !important;
+    padding: 0 13px !important;
+    border-radius: 12px !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.055) !important;
+    color: #e5edff !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+  }
+
+  .sidebar a.active,
+  .sidebar a:hover,
+  .sidebar a:focus-visible {
+    background: var(--sophon-orange) !important;
+    border-color: var(--sophon-orange) !important;
+    color: #ffffff !important;
+    outline: none !important;
+  }
+
+  .sidebar .logout-btn {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-height: 40px !important;
+    margin: 0 0 0 4px !important;
+    padding: 0 13px !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
   }
 
   .page {
@@ -1537,11 +1576,29 @@ textarea:focus-visible {
 
 @media (max-width: 640px) {
   .page {
-    padding: 10px !important;
+    padding: 8px !important;
   }
 
   .topbar,
   .card {
     padding: 14px !important;
+  }
+
+  .sidebar {
+    gap: 6px !important;
+    padding: 7px 8px !important;
+  }
+
+  .sidebar h2 {
+    flex-basis: 42px !important;
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .sidebar a,
+  .sidebar .logout-btn {
+    min-height: 36px !important;
+    padding: 0 11px !important;
+    font-size: 11px !important;
   }
 }
