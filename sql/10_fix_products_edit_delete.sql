@@ -22,10 +22,14 @@ end $$;
 
 alter table public.categories disable row level security;
 alter table public.products disable row level security;
+alter table public.batches disable row level security;
+alter table public.stock_movements disable row level security;
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.categories to anon, authenticated;
 grant select, insert, update, delete on public.products to anon, authenticated;
+grant select, insert, update, delete on public.batches to anon, authenticated;
+grant select, insert, update, delete on public.stock_movements to anon, authenticated;
 grant usage, select on all sequences in schema public to anon, authenticated;
 
 delete from public.products

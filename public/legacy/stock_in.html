@@ -1653,19 +1653,26 @@
       try {
         clearMessage();
 
-        const movementDelete = await supabaseClient
-          .from("stock_movements")
-          .delete()
-          .eq("batch_id", id);
-
-        if (movementDelete.error) throw movementDelete.error;
-
-        const { error } = await supabaseClient
+        let deleteResult = await supabaseClient
           .from("batches")
           .delete()
           .eq("id", id);
 
-        if (error) throw error;
+        if (deleteResult.error && deleteResult.error.code === "23503") {
+          const movementDelete = await supabaseClient
+            .from("stock_movements")
+            .delete()
+            .eq("batch_id", id);
+
+          if (movementDelete.error) throw movementDelete.error;
+
+          deleteResult = await supabaseClient
+            .from("batches")
+            .delete()
+            .eq("id", id);
+        }
+
+        if (deleteResult.error) throw deleteResult.error;
 
         await refreshAll();
         await cancelEdit();
