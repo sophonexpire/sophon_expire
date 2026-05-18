@@ -3937,6 +3937,518 @@
         display: none;
       }
     }
+
+    .inventory-intelligence {
+      display: grid;
+      gap: 18px;
+      padding: clamp(20px, 2.6vw, 28px);
+      border: 1px solid #dbe6f4;
+      border-radius: 24px;
+      background: #ffffff;
+      box-shadow: 0 24px 55px rgba(15, 23, 42, 0.07);
+    }
+
+    .intel-head,
+    .intel-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .intel-head h2 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 38px);
+      line-height: 1.22;
+      color: #0f172a;
+    }
+
+    .intel-head p,
+    .intel-card p,
+    .intel-muted {
+      margin: 8px 0 0;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .intel-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 12px;
+      color: #2563eb;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .intel-link:hover {
+      background: #eff6ff;
+    }
+
+    .intel-link.button {
+      border: 1px solid #bfdbfe;
+      background: #ffffff;
+    }
+
+    .intel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .intel-grid.top {
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+    }
+
+    .intel-card {
+      min-width: 0;
+      padding: clamp(18px, 2vw, 24px);
+      border: 1px solid #dbe6f4;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.045);
+    }
+
+    .intel-card h3 {
+      margin: 0;
+      color: #0f172a;
+      font-size: clamp(18px, 1.5vw, 22px);
+      line-height: 1.35;
+    }
+
+    .intel-card-head.inline {
+      align-items: center;
+    }
+
+    .intel-card-head a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      color: #2563eb;
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .range-tabs {
+      display: inline-flex;
+      padding: 3px;
+      border: 1px solid #dbe6f4;
+      border-radius: 12px;
+      background: #ffffff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    .range-tabs span {
+      min-width: 58px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .range-tabs .active {
+      background: #eaf2ff;
+      color: #2563eb;
+    }
+
+    .trend-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin: 18px 0 6px;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .trend-legend span,
+    .status-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .dot.blue { background: #2563eb; }
+    .dot.orange { background: #f97316; }
+    .dot.red { background: #ef4444; }
+    .dot.purple { background: #7c3aed; }
+    .dot.green { background: #10b981; }
+
+    .chart-wrap.intel-chart {
+      min-height: 280px !important;
+      margin-top: 8px !important;
+    }
+
+    .status-donut-layout {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.9fr) minmax(180px, 1fr);
+      gap: 22px;
+      align-items: center;
+      min-height: 300px;
+    }
+
+    .donut-shell {
+      position: relative;
+      min-height: 260px;
+    }
+
+    .donut-shell canvas {
+      position: absolute;
+      inset: 0;
+    }
+
+    .donut-center {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      transform: translate(-50%, -50%);
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      color: #64748b;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .donut-center strong {
+      color: #0f172a;
+      font-size: clamp(30px, 3vw, 42px);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .status-breakdown {
+      display: grid;
+      gap: 14px;
+    }
+
+    .status-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      color: #0f172a;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .status-row span:last-child {
+      font-variant-numeric: tabular-nums;
+      color: #334155;
+    }
+
+    .intel-table-wrap {
+      margin-top: 16px;
+      overflow-x: auto;
+    }
+
+    .intel-table {
+      width: 100%;
+      min-width: 620px;
+      border-collapse: collapse;
+    }
+
+    .intel-table th {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #64748b;
+      font-size: 12px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .intel-table td {
+      padding: 12px 8px;
+      border-bottom: 1px solid #edf2f7;
+      color: #0f172a;
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .intel-product {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .product-thumb {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #eff6ff, #ffffff);
+      border: 1px solid #dbeafe;
+      color: #2563eb;
+      font-weight: 900;
+    }
+
+    .product-main {
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .product-sub {
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .days-red {
+      display: block;
+      color: #ef4444;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .fefo-status {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .fefo-cards,
+    .value-risk-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .fefo-card,
+    .risk-card {
+      min-width: 0;
+      padding: 16px;
+      border-radius: 14px;
+      text-align: center;
+      border: 1px solid transparent;
+    }
+
+    .fefo-card strong,
+    .risk-card strong {
+      display: block;
+      margin-top: 4px;
+      font-size: clamp(24px, 2.4vw, 34px);
+      line-height: 1.1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fefo-card span,
+    .risk-card span {
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .tone-red {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #ef4444;
+    }
+
+    .tone-orange {
+      background: #fff7ed;
+      border-color: #fed7aa;
+      color: #f97316;
+    }
+
+    .tone-blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #2563eb;
+    }
+
+    .tone-green {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #059669;
+    }
+
+    .tone-purple {
+      background: #faf5ff;
+      border-color: #ddd6fe;
+      color: #7c3aed;
+    }
+
+    .fefo-bar {
+      display: grid;
+      grid-template-columns: var(--expired, 1fr) var(--warning, 1fr) var(--safe, 1fr);
+      height: 22px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e2e8f0;
+    }
+
+    .fefo-bar span:nth-child(1) { background: #ef4444; }
+    .fefo-bar span:nth-child(2) { background: #f97316; }
+    .fefo-bar span:nth-child(3) { background: #2563eb; }
+
+    .task-list,
+    .recommendation-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .task-row,
+    .recommendation-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .recommendation-row {
+      grid-template-columns: 54px minmax(0, 1fr);
+    }
+
+    .task-icon,
+    .recommendation-icon {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      font-weight: 900;
+    }
+
+    .recommendation-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      font-size: 24px;
+    }
+
+    .task-title,
+    .recommendation-title {
+      color: #0f172a;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .task-sub,
+    .recommendation-sub {
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .task-value {
+      font-size: 18px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .intel-footer {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 18px 22px;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      background: #eff6ff;
+      color: #334155;
+    }
+
+    .intel-footer div:nth-child(2) div {
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .intel-footer span {
+      display: block;
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .hidden-dashboard-hooks {
+      display: none !important;
+    }
+
+    @media (max-width: 1100px) {
+      .intel-grid,
+      .intel-grid.top {
+        grid-template-columns: 1fr;
+      }
+
+      .status-donut-layout {
+        grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .inventory-intelligence {
+        padding: 16px;
+        border-radius: 18px;
+      }
+
+      .intel-head,
+      .intel-card-head,
+      .intel-card-head.inline,
+      .intel-footer {
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+
+      .intel-link,
+      .intel-card-head a,
+      .intel-link.button {
+        width: 100%;
+      }
+
+      .range-tabs {
+        width: 100%;
+      }
+
+      .range-tabs span {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .status-donut-layout,
+      .fefo-cards,
+      .value-risk-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .task-row {
+        grid-template-columns: 42px minmax(0, 1fr);
+      }
+
+      .task-value {
+        grid-column: 2;
+      }
+    }
   </style>
 </head>
 <body>
@@ -4163,259 +4675,181 @@
         </div>
       </div>
 
-      <div class="section-block">
-        <div class="section-heading">
-          <div>
-            <div class="section-kicker">เริ่มตรงนี้ก่อน</div>
-            <h2>งานที่ต้องดูวันนี้</h2>
-            <p>รวมงานด่วน งานค้าง และของที่อาจต้องสั่งเพิ่ม</p>
-          </div>
-        </div>
-
-        <div class="alert-grid">
-          <div class="card">
-            <h2>สรุปเตือนวันนี้</h2>
-            <p class="subtext">ดูจำนวนรายการที่ควรรีบเช็ก</p>
-
-            <div class="summary-alerts">
-              <div class="summary-alert critical">
-                <div>
-                  <div class="summary-alert-title">ล็อตหมดอายุที่ยังไม่ปิดงาน</div>
-                  <div class="summary-alert-sub">ควรตรวจสอบและปิดงานให้ครบ</div>
-                </div>
-                <div class="summary-alert-value text-red" id="alertExpiredCount">0</div>
-              </div>
-
-              <div class="summary-alert warning">
-                <div>
-                  <div class="summary-alert-title">ล็อตใกล้หมดอายุภายใน 2 เดือน</div>
-                  <div class="summary-alert-sub">ควรเร่งขายหรือหยิบใช้ก่อน</div>
-                </div>
-                <div class="summary-alert-value text-orange" id="alertWarningCount">0</div>
-              </div>
-
-              <div class="summary-alert info">
-                <div>
-                  <div class="summary-alert-title">สินค้าหมดสต๊อก / ควรสั่งซื้อ</div>
-                  <div class="summary-alert-sub">อ้างอิงจากยอดขายล่าสุด</div>
-                </div>
-                <div class="summary-alert-value text-blue" id="alertReorderCount">0</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h2>สรุปงานที่ต้องติดตาม</h2>
-            <p class="subtext">สรุปตัวเลขที่ช่วยบอกว่างานค้างอยู่ตรงไหน</p>
-
-            <div class="focus-box">
-              <div class="focus-row">
-                <div class="focus-left">
-                  <div class="focus-title">รายการเร่งด่วนทั้งหมด</div>
-                  <div class="focus-sub">รวมใกล้หมดอายุและหมดอายุแล้ว</div>
-                </div>
-                <div class="focus-value text-red" id="focusUrgentTotal">0</div>
-              </div>
-
-              <div class="focus-row">
-                <div class="focus-left">
-                  <div class="focus-title">สินค้าชำรุดค้างจัดการ</div>
-                  <div class="focus-sub">รายการที่ยังไม่ปิดงาน</div>
-                </div>
-                <div class="focus-value text-purple" id="focusDamageTotal">0</div>
-              </div>
-
-              <div class="focus-row">
-                <div class="focus-left">
-                  <div class="focus-title">รายการที่จัดการแล้ว</div>
-                  <div class="focus-sub">รวมทั้งคืน supplier และทำลายแล้ว</div>
-                </div>
-                <div class="focus-value text-green" id="focusHandledTotal">0</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-block">
-        <div class="section-heading">
+      <section class="inventory-intelligence" aria-labelledby="inventoryIntelligenceTitle">
+        <div class="intel-head">
           <div>
             <div class="section-kicker">มุมมองเชิงวิเคราะห์</div>
-            <h2>กราฟภาพรวมสต๊อก</h2>
-            <p>ใช้กราฟดูว่ามีความเสี่ยงตรงไหน และสินค้าใดควรดูเป็นพิเศษ</p>
+            <h2 id="inventoryIntelligenceTitle">ภาพรวมสินค้าใกล้หมดอายุ</h2>
+            <p>ติดตามแนวโน้ม สัดส่วนสถานะ รายการอันดับแรก และคำแนะนำที่ควรจัดการต่อ</p>
           </div>
+          <a class="intel-link" href="expire_returns.html">ดูรายการทั้งหมด ›</a>
         </div>
 
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h2>แนวโน้มสินค้าหมดอายุ / ใกล้หมดอายุ</h2>
-        <p class="chart-sub">ดูจำนวนล็อตตามวันหมดอายุ เพื่อเห็นช่วงที่มีงานด่วนมาก</p>
-        <div class="chart-wrap short">
-          <canvas id="expiryTrendChart"></canvas>
-        </div>
-      </div>
+        <div class="intel-grid top">
+          <article class="intel-card span-7">
+            <div class="intel-card-head">
+              <div>
+                <h3>แนวโน้มสินค้าใกล้หมดอายุ</h3>
+                <p>ใกล้หมดอายุภายใน 60 วัน เทียบกับสินค้าหมดอายุแล้ว</p>
+              </div>
+              <div class="range-tabs" aria-label="ช่วงเวลารายงาน">
+                <span>7 วัน</span>
+                <span class="active">30 วัน</span>
+                <span>90 วัน</span>
+              </div>
+            </div>
+            <div class="trend-legend">
+              <span><i class="dot orange"></i>ใกล้หมดอายุ (ภายใน 60 วัน)</span>
+              <span><i class="dot red"></i>หมดอายุแล้ว</span>
+            </div>
+            <div class="chart-wrap intel-chart">
+              <canvas id="expiryTrendChart"></canvas>
+            </div>
+          </article>
 
-      <div class="chart-card">
-        <h2>ภาพรวมสถานะสต๊อก</h2>
-        <p class="chart-sub">ดูสัดส่วนล็อตที่ต้องรีบจัดการ เทียบกับล็อตปกติและงานที่ปิดแล้ว</p>
-        <div class="chart-wrap short">
-          <canvas id="statusOverviewChart"></canvas>
+          <article class="intel-card span-5">
+            <div class="intel-card-head">
+              <div>
+                <h3>สัดส่วนสถานะสินค้า</h3>
+                <p>แยกสถานะจากข้อมูลล่าสุดในระบบ</p>
+              </div>
+            </div>
+            <div class="status-donut-layout">
+              <div class="donut-shell">
+                <canvas id="statusOverviewChart"></canvas>
+                <div class="donut-center">
+                  <span>รวมทั้งหมด</span>
+                  <strong id="statusTotalCount">0</strong>
+                  <span>รายการ</span>
+                </div>
+              </div>
+              <div class="status-breakdown" id="statusBreakdown">
+                <div class="empty-state">กำลังโหลดข้อมูล...</div>
+              </div>
+            </div>
+          </article>
         </div>
-        <div class="chart-legend-note">
-          <span class="legend-pill"><span class="legend-dot" style="background:#ef4444;"></span>หมดอายุ</span>
-          <span class="legend-pill"><span class="legend-dot" style="background:#f59e0b;"></span>ใกล้หมดอายุ</span>
-          <span class="legend-pill"><span class="legend-dot" style="background:#8b5cf6;"></span>ชำรุดค้างจัดการ</span>
-          <span class="legend-pill"><span class="legend-dot" style="background:#22c55e;"></span>จัดการแล้ว</span>
-          <span class="legend-pill"><span class="legend-dot" style="background:#3b82f6;"></span>ปกติ</span>
+
+        <div class="intel-grid">
+          <article class="intel-card">
+            <div class="intel-card-head inline">
+              <div>
+                <h3>สินค้าใกล้หมดอายุ (Top 5)</h3>
+                <p>เรียงตามมูลค่าสินค้าใกล้หมดอายุภายใน 60 วัน</p>
+              </div>
+              <a href="expire_returns.html">ดูทั้งหมด</a>
+            </div>
+            <div class="intel-table-wrap">
+              <table class="intel-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>สินค้า</th>
+                    <th>ใกล้หมดอายุ</th>
+                    <th>มูลค่า</th>
+                    <th>วันหมดอายุ</th>
+                  </tr>
+                </thead>
+                <tbody id="nearExpireTopRows">
+                  <tr><td colspan="5"><div class="empty-state">กำลังโหลดข้อมูล...</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
+
+          <article class="intel-card">
+            <div class="intel-card-head inline">
+              <div>
+                <h3>สินค้าที่หมดอายุ (Top 5)</h3>
+                <p>เรียงตามจำนวนรายการที่หมดอายุแล้ว</p>
+              </div>
+              <a href="expire_returns.html">ดูทั้งหมด</a>
+            </div>
+            <div class="intel-table-wrap">
+              <table class="intel-table">
+                <thead>
+                  <tr>
+                    <th>ลำดับ</th>
+                    <th>สินค้า</th>
+                    <th>จำนวน</th>
+                    <th>มูลค่า</th>
+                    <th>หมดอายุเมื่อ</th>
+                  </tr>
+                </thead>
+                <tbody id="expiredTopRows">
+                  <tr><td colspan="5"><div class="empty-state">กำลังโหลดข้อมูล...</div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </article>
         </div>
-      </div>
 
-      <div class="chart-card">
-        <h2>ภาพรวม FEFO</h2>
-        <p class="chart-sub">ช่วยจัดลำดับการหยิบใช้ตามวันหมดอายุ</p>
-        <div class="chart-wrap short">
-          <canvas id="fefoBucketChart"></canvas>
+        <div class="intel-grid">
+          <article class="intel-card">
+            <h3>FEFO Status (First Expired, First Out)</h3>
+            <p class="intel-muted">ช่วยจัดลำดับการหยิบใช้ตามวันหมดอายุ</p>
+            <div class="fefo-status" id="fefoStatusContent">
+              <div class="empty-state">กำลังโหลดข้อมูล...</div>
+            </div>
+          </article>
+
+          <article class="intel-card">
+            <h3>ความเสี่ยงแยกตามมูลค่า</h3>
+            <p class="intel-muted">มูลค่าสินค้าตามระดับความเสี่ยง</p>
+            <div class="value-risk-grid" id="valueRiskContent">
+              <div class="empty-state">กำลังโหลดข้อมูล...</div>
+            </div>
+          </article>
         </div>
-      </div>
-    </div>
 
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h2>อันดับปัญหาตามสินค้า</h2>
-        <p class="chart-sub">ดูว่าสินค้าตัวไหนมีปัญหามากที่สุด</p>
-        <div class="chart-wrap">
-          <canvas id="urgentProductChart"></canvas>
+        <div class="intel-grid">
+          <article class="intel-card">
+            <div class="intel-card-head inline">
+              <div>
+                <h3>งานที่ต้องดำเนินการ</h3>
+              </div>
+              <a href="expire_returns.html">ดูทั้งหมด</a>
+            </div>
+            <div class="task-list" id="actionTasksContent">
+              <div class="empty-state">กำลังโหลดข้อมูล...</div>
+            </div>
+          </article>
+
+          <article class="intel-card">
+            <h3>คำแนะนำสำหรับผู้จัดการ</h3>
+            <div class="recommendation-list" id="managerRecommendationList">
+              <div class="empty-state">กำลังโหลดข้อมูล...</div>
+            </div>
+          </article>
         </div>
-      </div>
 
-      <div class="chart-card">
-        <h2>อันดับงานเร่งด่วน</h2>
-        <p class="chart-sub">ดูว่าสินค้าตัวไหนควรตรวจสอบก่อน</p>
-        <div class="rank-list" id="urgentRankList">
-          <div class="empty-state">กำลังโหลดข้อมูล...</div>
-        </div>
-      </div>
-    </div>
-
-      </div>
-
-      <div class="section-block">
-        <div class="section-heading">
+        <div class="intel-footer">
+          <div class="report-info-icon" aria-hidden="true">i</div>
           <div>
-            <div class="section-kicker">วางแผนสต๊อก</div>
-            <h2>ยอดขายและการสั่งซื้อ</h2>
-            <p>ใช้ข้อมูลขายช่วยตัดสินใจเติมสต๊อก</p>
+            <div id="dashboardDataNote">ข้อมูลทั้งหมดอัปเดตอัตโนมัติจากข้อมูลล่าสุดในระบบ</div>
+            <span>ข้อมูลอาจเปลี่ยนแปลงตามการทำรายการล่าสุด</span>
           </div>
+          <a class="intel-link button" href="expire_returns.html">ดูแนวทางการจัดการ ↗</a>
         </div>
 
-    <div class="sales-summary-grid">
-      <div class="sales-summary-card">
-        <div class="label">ยอดขายย้อนหลัง 14 วัน</div>
-        <div class="value" id="sales14Value">0</div>
-        <div class="sub">รวมยอดขายล่าสุด</div>
-      </div>
-
-      <div class="sales-summary-card">
-        <div class="label">ค่าเฉลี่ยขายต่อวัน</div>
-        <div class="value" id="salesAvgDailyValue">0</div>
-        <div class="sub">คำนวณจากยอดขายย้อนหลัง 30 วัน</div>
-      </div>
-
-      <div class="sales-summary-card">
-        <div class="label">จำนวนเอกสารขายที่ใช้วิเคราะห์</div>
-        <div class="value" id="salesDocsValue">0</div>
-        <div class="sub">เอกสารที่ใช้ในการคำนวณ</div>
-      </div>
-    </div>
-
-    <div class="chart-grid">
-      <div class="chart-card">
-        <h2>แนวโน้มยอดขาย</h2>
-        <p class="chart-sub">ดูยอดขายรายวัน เพื่อช่วยวางแผนเติมสต๊อก</p>
-        <div class="chart-wrap short">
-          <canvas id="salesTrendChart"></canvas>
+        <div class="hidden-dashboard-hooks" aria-hidden="true">
+          <span id="focusUrgentTotal"></span>
+          <span id="focusDamageTotal"></span>
+          <span id="focusHandledTotal"></span>
+          <span id="alertExpiredCount"></span>
+          <span id="alertWarningCount"></span>
+          <span id="alertReorderCount"></span>
+          <span id="sales14Value"></span>
+          <span id="salesAvgDailyValue"></span>
+          <span id="salesDocsValue"></span>
+          <span id="urgentMiniCount"></span>
+          <div id="urgentMiniList"></div>
+          <div id="damageMiniList"></div>
+          <div id="urgentRankList"></div>
+          <table><tbody id="reorderTableBody"></tbody></table>
+          <select id="coverageDaysSelect"><option value="14" selected>14</option></select>
         </div>
-      </div>
-
-      <div class="chart-card">
-        <h2>สินค้าขายดีล่าสุด</h2>
-        <p class="chart-sub">เรียงตามยอดขายล่าสุด เพื่อดูสินค้าขายดี</p>
-        <div class="chart-wrap">
-          <canvas id="topSalesChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-      <div class="section-heading">
-        <div>
-          <div class="section-kicker">รายการปฏิบัติการ</div>
-          <h2>รายการที่ต้องทำต่อ</h2>
-          <p>เปิดดูรายการจริงได้ทันที</p>
-        </div>
-      </div>
-
-      <div class="page-grid">
-        <div class="card">
-          <h2>
-            รายการเร่งด่วน
-            <span class="count-badge" id="urgentMiniCount">0 รายการ</span>
-          </h2>
-          <p class="subtext">รายการใกล้หมดอายุหรือหมดอายุแล้ว ที่ยังไม่ได้จัดการ</p>
-
-          <div class="mini-list" id="urgentMiniList">
-            <div class="empty-state">กำลังโหลดข้อมูล...</div>
-          </div>
-
-          <a class="card-footer-link" href="expire_returns.html">ดูทั้งหมด →</a>
-        </div>
-        <div class="card">
-          <h2>สินค้าชำรุดล่าสุด</h2>
-          <p class="subtext">แสดงเฉพาะรายการที่ยังค้างอยู่</p>
-
-          <div class="mini-list" id="damageMiniList">
-            <div class="empty-state">กำลังโหลดข้อมูล...</div>
-          </div>
-
-          <a class="card-footer-link" href="damaged_manage.html">ดูทั้งหมด →</a>
-        </div>
-      </div>
-
-      <div class="card">
-      <h2>คำแนะนำการสั่งซื้อ</h2>
-      <div class="reorder-toolbar">
-        <div class="toolbar-note">
-          ใช้ยอดขายล่าสุดคำนวณ และแนะนำจำนวนที่ควรสั่งซื้อ
-        </div>
-        <div class="toolbar-controls">
-          <label for="coverageDaysSelect">จำนวนวันครอบคลุม</label>
-          <select id="coverageDaysSelect">
-            <option value="7">7 วัน</option>
-            <option value="14" selected>14 วัน</option>
-            <option value="30">30 วัน</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table class="reorder-table">
-          <thead>
-            <tr>
-              <th>สินค้า</th>
-              <th>รหัสสินค้า</th>
-              <th>สต๊อกปัจจุบัน</th>
-              <th>ยอดขายล่าสุด</th>
-              <th>เฉลี่ยต่อวัน</th>
-              <th>แนะนำให้สั่ง</th>
-              <th>สถานะ</th>
-            </tr>
-          </thead>
-          <tbody id="reorderTableBody">
-            <tr><td colspan="7"><div class="empty-state">กำลังโหลดข้อมูล...</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-      </div>
-    </div>
+      </section>
     </div>
   </div>
 
@@ -4949,6 +5383,7 @@
 
     function renderUrgentRankList(groups) {
       const el = document.getElementById("urgentRankList");
+      if (!el) return;
 
       if (!groups.length) {
         el.innerHTML = `<div class="empty-state">ยังไม่มีสินค้าที่ใกล้หมดอายุหรือหมดอายุ</div>`;
@@ -5047,16 +5482,16 @@
       dashboardCharts.statusOverview = new Chart(canvas, {
         type: "doughnut",
         data: {
-          labels: ["หมดอายุ", "ใกล้หมดอายุ", "ชำรุดค้างจัดการ", "จัดการแล้ว", "ปกติ"],
+          labels: ["ปกติ", "ใกล้หมดอายุ", "หมดอายุแล้ว", "ชำรุด", "คืนแล้ว"],
           datasets: [{
             data: [
-              data.expiredCount,
+              data.safeCount,
               data.warningCount,
+              data.expiredCount,
               data.activeDamageCount,
-              data.handledCount,
-              data.safeCount
+              data.handledCount
             ],
-            backgroundColor: ["#ef4444", "#f59e0b", "#8b5cf6", "#22c55e", "#3b82f6"],
+            backgroundColor: ["#2563eb", "#f97316", "#ef4444", "#7c3aed", "#10b981"],
             borderColor: "#ffffff",
             borderWidth: 4,
             hoverOffset: 10
@@ -5277,7 +5712,8 @@
 
     function renderUrgentMiniList(items) {
       const el = document.getElementById("urgentMiniList");
-      document.getElementById("urgentMiniCount").textContent = `${items.length} รายการ`;
+      if (!el) return;
+      setTextWithTitle("urgentMiniCount", `${items.length} รายการ`);
 
       if (!items.length) {
         el.innerHTML = `<div class="empty-state">ไม่มีรายการเร่งด่วน</div>`;
@@ -5305,6 +5741,7 @@
 
     function renderDamageMiniList(items) {
       const el = document.getElementById("damageMiniList");
+      if (!el) return;
 
       if (!items.length) {
         el.innerHTML = `<div class="empty-state">ไม่มีรายการสินค้าชำรุดที่ค้างอยู่</div>`;
@@ -5373,6 +5810,243 @@
           </td>
         </tr>
       `).join("");
+    }
+
+    function getProductInitial(name) {
+      const trimmed = String(name || "-").trim();
+      return escapeHtml(trimmed.slice(0, 1).toUpperCase() || "-");
+    }
+
+    function renderInventoryRows(targetId, items, type) {
+      const body = document.getElementById(targetId);
+      if (!body) return;
+
+      if (!items.length) {
+        body.innerHTML = `<tr><td colspan="5"><div class="empty-state">ยังไม่มีข้อมูลในกลุ่มนี้</div></td></tr>`;
+        return;
+      }
+
+      body.innerHTML = items.slice(0, 5).map((item, index) => {
+        const daysText = Number.isFinite(item.daysLeft)
+          ? item.daysLeft < 0
+            ? `${Math.abs(item.daysLeft)} วัน`
+            : `${item.daysLeft} วัน`
+          : "-";
+        const dateLabel = type === "expired" ? "หมดอายุแล้ว" : "เหลือ";
+
+        return `
+          <tr>
+            <td><strong>${index + 1}</strong></td>
+            <td>
+              <div class="intel-product">
+                <div class="product-thumb">${getProductInitial(item.product_display_name)}</div>
+                <div>
+                  <div class="product-main">${escapeHtml(item.product_display_name || "-")}</div>
+                  <div class="product-sub">Lot: ${escapeHtml(item.batch_no || "-")}</div>
+                </div>
+              </div>
+            </td>
+            <td><strong>${escapeHtml(formatQty(item.quantity_num))}</strong></td>
+            <td><strong>${escapeHtml(formatMoney(item.stock_value))}</strong></td>
+            <td>
+              <strong>${escapeHtml(formatDate(item.expiry_date))}</strong>
+              <span class="days-red">${escapeHtml(dateLabel)} ${escapeHtml(daysText)}</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function renderStatusBreakdown(data) {
+      const total = data.safeCount + data.warningCount + data.expiredCount + data.activeDamageCount + data.handledCount;
+      setTextWithTitle("statusTotalCount", formatQtyCompact(total));
+
+      const rows = [
+        { label: "ปกติ", value: data.safeCount, color: "blue" },
+        { label: "ใกล้หมดอายุ", value: data.warningCount, color: "orange" },
+        { label: "หมดอายุแล้ว", value: data.expiredCount, color: "red" },
+        { label: "ชำรุด", value: data.activeDamageCount, color: "purple" },
+        { label: "คืนแล้ว", value: data.handledCount, color: "green" }
+      ];
+      const el = document.getElementById("statusBreakdown");
+      if (!el) return;
+
+      el.innerHTML = rows.map(item => {
+        const percent = total > 0 ? (item.value / total) * 100 : 0;
+        return `
+          <div class="status-row">
+            <span class="status-line"><i class="dot ${item.color}"></i>${escapeHtml(item.label)}</span>
+            <span>${escapeHtml(formatQtyCompact(item.value))} (${escapeHtml(formatQtyCompact(percent))}%)</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderFefoStatus(fefoBuckets) {
+      const el = document.getElementById("fefoStatusContent");
+      if (!el) return;
+      const total = fefoBuckets.expired + fefoBuckets.next60 + fefoBuckets.over60;
+      const expiredPercent = total ? Math.max(fefoBuckets.expired, 1) : 1;
+      const warningPercent = total ? Math.max(fefoBuckets.next60, 1) : 1;
+      const safePercent = total ? Math.max(fefoBuckets.over60, 1) : 1;
+
+      el.innerHTML = `
+        <div class="fefo-cards">
+          <div class="fefo-card tone-red">
+            <span>หมดอายุแล้ว</span>
+            <strong>${escapeHtml(formatQtyCompact(fefoBuckets.expired))}</strong>
+            <span>รายการ</span>
+          </div>
+          <div class="fefo-card tone-orange">
+            <span>0 - 60 วัน</span>
+            <strong>${escapeHtml(formatQtyCompact(fefoBuckets.next60))}</strong>
+            <span>รายการ</span>
+          </div>
+          <div class="fefo-card tone-blue">
+            <span>มากกว่า 60 วัน</span>
+            <strong>${escapeHtml(formatQtyCompact(fefoBuckets.over60))}</strong>
+            <span>รายการ</span>
+          </div>
+        </div>
+        <div class="fefo-bar" style="--expired:${expiredPercent}; --warning:${warningPercent}; --safe:${safePercent};">
+          <span></span><span></span><span></span>
+        </div>
+      `;
+    }
+
+    function renderValueRisk({ expiredItems, warningItems, batches, damageItems }) {
+      const el = document.getElementById("valueRiskContent");
+      if (!el) return;
+      const expiredValue = expiredItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
+      const warningValue = warningItems.reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
+      const safeValue = batches
+        .filter(item => item.displayStatus === "safe" && item.quantity_num > 0)
+        .reduce((sum, item) => sum + Number(item.stock_value || 0), 0);
+      const damageValue = damageItems.reduce((sum, item) => sum + Number(item.damage_value || 0), 0);
+      const totalValue = expiredValue + warningValue + safeValue + damageValue;
+
+      el.innerHTML = `
+        <div class="risk-card tone-red">
+          <span>ความเสี่ยงสูง</span>
+          <strong>${escapeHtml(formatMoney(expiredValue))}</strong>
+          <span>หมดอายุแล้ว</span>
+        </div>
+        <div class="risk-card tone-orange">
+          <span>ความเสี่ยงปานกลาง</span>
+          <strong>${escapeHtml(formatMoney(warningValue))}</strong>
+          <span>ใกล้หมดอายุภายใน 60 วัน</span>
+        </div>
+        <div class="risk-card tone-blue">
+          <span>ความเสี่ยงต่ำ</span>
+          <strong>${escapeHtml(formatMoney(safeValue))}</strong>
+          <span>มากกว่า 60 วัน</span>
+        </div>
+        <div class="risk-card" style="grid-column:1 / -1;">
+          <span>มูลค่ารวมสินค้าทั้งหมด</span>
+          <strong>${escapeHtml(formatMoney(totalValue))}</strong>
+        </div>
+      `;
+    }
+
+    function renderActionTasks({ warningItems, expiredItems, damageItems, handledCount }) {
+      const el = document.getElementById("actionTasksContent");
+      if (!el) return;
+      const rows = [
+        { icon: "◷", tone: "tone-orange", title: "ตรวจสอบและจัดการสินค้าใกล้หมดอายุ (ภายใน 60 วัน)", value: warningItems.length },
+        { icon: "!", tone: "tone-red", title: "ตรวจสอบสินค้าหมดอายุ", value: expiredItems.length },
+        { icon: "✓", tone: "tone-green", title: "ติดตามการคืนสินค้า / เคลม", value: handledCount },
+        { icon: "□", tone: "tone-purple", title: "ตรวจสอบสินค้าชำรุด", value: damageItems.length }
+      ];
+
+      el.innerHTML = rows.map(item => `
+        <div class="task-row">
+          <div class="task-icon ${item.tone}">${escapeHtml(item.icon)}</div>
+          <div>
+            <div class="task-title">${escapeHtml(item.title)}</div>
+          </div>
+          <div class="task-value ${item.tone}">${escapeHtml(formatQtyCompact(item.value))}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows }) {
+      const el = document.getElementById("managerRecommendationList");
+      if (!el) return;
+      const topWarning = warningItems.slice().sort((a, b) => Number(b.stock_value || 0) - Number(a.stock_value || 0))[0];
+      const rows = [
+        {
+          icon: "◎",
+          tone: "tone-blue",
+          title: "เร่งระบายสินค้าใกล้หมดอายุ",
+          sub: `มีสินค้า ${formatQtyCompact(warningItems.length)} รายการ ใกล้หมดอายุภายใน 60 วัน แนะนำจัดโปรโมชันหรือกระจายไปยังสาขา`
+        },
+        {
+          icon: "▣",
+          tone: "tone-green",
+          title: "วางแผนการสั่งซื้อ",
+          sub: `ติดตามแนวโน้มสินค้าใกล้หมดอายุ และตรวจรายการควรเติมสต็อก ${formatQtyCompact(reorderRows.length)} รายการ`
+        },
+        {
+          icon: "◕",
+          tone: "tone-red",
+          title: "โฟกัสสินค้าความเสี่ยงสูง",
+          sub: topWarning
+            ? `${topWarning.product_display_name} เป็นสินค้ามูลค่าเสี่ยงที่ควรจัดการก่อน`
+            : `มีสินค้าหมดอายุแล้ว ${formatQtyCompact(expiredItems.length)} รายการ และสินค้าชำรุด ${formatQtyCompact(damageItems.length)} รายการ`
+        },
+        {
+          icon: "□",
+          tone: "tone-purple",
+          title: "ตรวจสอบสต็อกสม่ำเสมอ",
+          sub: "ตรวจสอบล็อตทุกสัปดาห์ เพื่อลดความเสี่ยงและลดการสูญเสีย"
+        }
+      ];
+
+      el.innerHTML = rows.map(item => `
+        <div class="recommendation-row">
+          <div class="recommendation-icon ${item.tone}">${escapeHtml(item.icon)}</div>
+          <div>
+            <div class="recommendation-title">${escapeHtml(item.title)}</div>
+            <div class="recommendation-sub">${escapeHtml(item.sub)}</div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderInventoryIntelligence({
+      batches,
+      warningItems,
+      expiredItems,
+      damageItems,
+      handledCount,
+      fefoBuckets,
+      reorderRows
+    }) {
+      renderInventoryRows(
+        "nearExpireTopRows",
+        warningItems.slice().sort((a, b) => Number(b.stock_value || 0) - Number(a.stock_value || 0)),
+        "warning"
+      );
+      renderInventoryRows(
+        "expiredTopRows",
+        expiredItems.slice().sort((a, b) => Number(b.quantity_num || 0) - Number(a.quantity_num || 0)),
+        "expired"
+      );
+      renderStatusBreakdown({
+        safeCount: batches.filter(item => item.displayStatus === "safe" && item.quantity_num > 0).length,
+        warningCount: warningItems.length,
+        expiredCount: expiredItems.length,
+        activeDamageCount: damageItems.length,
+        handledCount
+      });
+      renderFefoStatus(fefoBuckets);
+      renderValueRisk({ expiredItems, warningItems, batches, damageItems });
+      renderActionTasks({ warningItems, expiredItems, damageItems, handledCount });
+      renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows });
+      setTextWithTitle(
+        "dashboardDataNote",
+        `ข้อมูลทั้งหมดอัปเดตล่าสุดเมื่อ ${new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.`
+      );
     }
 
     function renderManagerPriorityList({ expiredItems, warningItems, damageItems, reorderRows }) {
@@ -5717,6 +6391,15 @@
           activeDamageCount: activeDamageItems.length,
           handledCount,
           safeCount
+        });
+        renderInventoryIntelligence({
+          batches,
+          warningItems,
+          expiredItems,
+          damageItems: activeDamageItems,
+          handledCount,
+          fefoBuckets,
+          reorderRows
         });
         renderFefoBucketChart(fefoBuckets);
         renderUrgentProductChart(issueRanking);
