@@ -4057,6 +4057,17 @@
       text-align: center;
     }
 
+    .database-tabs {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 420px;
+    }
+
+    .database-tabs span {
+      min-width: 0;
+      white-space: nowrap;
+    }
+
     .range-tabs .active {
       background: #eaf2ff;
       color: #2563eb;
@@ -4692,10 +4703,10 @@
                 <h3>แนวโน้มสินค้าใกล้หมดอายุ</h3>
                 <p>ใกล้หมดอายุภายใน 60 วัน เทียบกับสินค้าหมดอายุแล้ว</p>
               </div>
-              <div class="range-tabs" aria-label="ช่วงเวลารายงาน">
-                <span>7 วัน</span>
-                <span class="active">30 วัน</span>
-                <span>90 วัน</span>
+              <div class="range-tabs database-tabs" aria-label="สรุปข้อมูลจากฐานข้อมูล">
+                <span id="trendTotalChip">ทั้งหมด 0 รายการ</span>
+                <span id="trendNearChip" class="active">ใกล้หมดอายุ 0</span>
+                <span id="trendExpiredChip">หมดอายุ 0</span>
               </div>
             </div>
             <div class="trend-legend">
@@ -4711,7 +4722,7 @@
             <div class="intel-card-head">
               <div>
                 <h3>สัดส่วนสถานะสินค้า</h3>
-                <p>แยกสถานะจากข้อมูลล่าสุดในระบบ</p>
+                <p id="statusSourceText">แยกสถานะจากข้อมูลล่าสุดในฐานข้อมูล</p>
               </div>
             </div>
             <div class="status-donut-layout">
@@ -4735,7 +4746,7 @@
             <div class="intel-card-head inline">
               <div>
                 <h3>สินค้าใกล้หมดอายุ (Top 5)</h3>
-                <p>เรียงตามมูลค่าสินค้าใกล้หมดอายุภายใน 60 วัน</p>
+                <p id="nearExpireSubText">เรียงตามมูลค่าสินค้าใกล้หมดอายุภายใน 60 วันจากฐานข้อมูล</p>
               </div>
               <a href="expire_returns.html">ดูทั้งหมด</a>
             </div>
@@ -4761,7 +4772,7 @@
             <div class="intel-card-head inline">
               <div>
                 <h3>สินค้าที่หมดอายุ (Top 5)</h3>
-                <p>เรียงตามจำนวนรายการที่หมดอายุแล้ว</p>
+                <p id="expiredSubText">เรียงตามจำนวนรายการที่หมดอายุแล้วจากฐานข้อมูล</p>
               </div>
               <a href="expire_returns.html">ดูทั้งหมด</a>
             </div>
@@ -4826,8 +4837,8 @@
         <div class="intel-footer">
           <div class="report-info-icon" aria-hidden="true">i</div>
           <div>
-            <div id="dashboardDataNote">ข้อมูลทั้งหมดอัปเดตอัตโนมัติจากข้อมูลล่าสุดในระบบ</div>
-            <span>ข้อมูลอาจเปลี่ยนแปลงตามการทำรายการล่าสุด</span>
+            <div id="dashboardDataNote">ข้อมูลทั้งหมดอัปเดตอัตโนมัติจากข้อมูลล่าสุดในฐานข้อมูล</div>
+            <span id="dashboardSourceNote">กำลังตรวจสอบแหล่งข้อมูล...</span>
           </div>
           <a class="intel-link button" href="expire_returns.html">ดูแนวทางการจัดการ ↗</a>
         </div>
@@ -6014,14 +6025,20 @@
     }
 
     function renderInventoryIntelligence({
+      products,
       batches,
       warningItems,
       expiredItems,
       damageItems,
       handledCount,
       fefoBuckets,
-      reorderRows
+      reorderRows,
+      salesUploads,
+      salesLines
     }) {
+      const activeBatchCount = batches.filter(item => item.quantity_num > 0).length;
+      const sourceTime = new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+
       renderInventoryRows(
         "nearExpireTopRows",
         warningItems.slice().sort((a, b) => Number(b.stock_value || 0) - Number(a.stock_value || 0)),
@@ -6043,9 +6060,28 @@
       renderValueRisk({ expiredItems, warningItems, batches, damageItems });
       renderActionTasks({ warningItems, expiredItems, damageItems, handledCount });
       renderManagerRecommendations({ warningItems, expiredItems, damageItems, reorderRows });
+      setTextWithTitle("trendTotalChip", `สต๊อกมีอยู่ ${formatQtyCompact(activeBatchCount)} ล็อต`);
+      setTextWithTitle("trendNearChip", `ใกล้หมดอายุ ${formatQtyCompact(warningItems.length)}`);
+      setTextWithTitle("trendExpiredChip", `หมดอายุ ${formatQtyCompact(expiredItems.length)}`);
+      setTextWithTitle(
+        "statusSourceText",
+        `คำนวณจาก batches ${formatQtyCompact(batches.length)} รายการ และ damage_reports ${formatQtyCompact(damageItems.length)} รายการ`
+      );
+      setTextWithTitle(
+        "nearExpireSubText",
+        `เรียงจากฐานข้อมูล batches ตามมูลค่า stock_value ภายใน 60 วัน (${formatQtyCompact(warningItems.length)} รายการ)`
+      );
+      setTextWithTitle(
+        "expiredSubText",
+        `เรียงจากฐานข้อมูล batches ตามจำนวนคงเหลือที่หมดอายุแล้ว (${formatQtyCompact(expiredItems.length)} รายการ)`
+      );
       setTextWithTitle(
         "dashboardDataNote",
-        `ข้อมูลทั้งหมดอัปเดตล่าสุดเมื่อ ${new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })} น.`
+        `ข้อมูลทั้งหมดคำนวณจากฐานข้อมูลล่าสุดเมื่อ ${sourceTime} น.`
+      );
+      setTextWithTitle(
+        "dashboardSourceNote",
+        `แหล่งข้อมูล: products ${formatQtyCompact(products.length)} รายการ, batches ${formatQtyCompact(batches.length)} รายการ, damage_reports ${formatQtyCompact(damageItems.length)} รายการ, sales_uploads ${formatQtyCompact((salesUploads || []).length)} เอกสาร, sales_lines ${formatQtyCompact((salesLines || []).length)} รายการ`
       );
     }
 
@@ -6393,13 +6429,16 @@
           safeCount
         });
         renderInventoryIntelligence({
+          products,
           batches,
           warningItems,
           expiredItems,
           damageItems: activeDamageItems,
           handledCount,
           fefoBuckets,
-          reorderRows
+          reorderRows,
+          salesUploads: uploadsResult.data || [],
+          salesLines
         });
         renderFefoBucketChart(fefoBuckets);
         renderUrgentProductChart(issueRanking);
